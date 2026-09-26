@@ -1,0 +1,15 @@
+pragma cashscript ^0.13.0;
+
+/*
+ * GameVault - the funding address of a GameOfLife deployment.
+ *
+ * Anyone can send BCH here from any wallet. The coins can only be spent together with the
+ * game's state NFT (always input 0), and the GameOfLife covenant carries every input's value
+ * over into the game output, so vault coins can only ever pay for moves of the game.
+ */
+contract GameVault(bytes32 stateCategory) {
+    function absorb() {
+        require(this.activeInputIndex > 0);
+        require(tx.inputs[0].tokenCategory == stateCategory + 0x01);
+    }
+}

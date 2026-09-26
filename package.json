@@ -1,0 +1,17 @@
+{
+  "name": "game-of-life-bch",
+  "private": true,
+  "description": "Conway's Game of Life played by Bitcoin Cash smart contracts (CashScript + CashTokens)",
+  "packageManager": "yarn@4.10.3",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "yarn workspace @gol/core build && yarn workspace @gol/cli build && yarn workspace @gol/web build",
+    "test": "yarn workspace @gol/core test",
+    "typecheck": "yarn workspace @gol/core typecheck && yarn workspace @gol/cli typecheck && yarn workspace @gol/web typecheck",
+    "compile": "yarn workspace @gol/core compile",
+    "dev": "yarn workspace @gol/core build && yarn workspace @gol/web dev",
+    "gol": "node packages/cli/dist/index.js"
+  }
+}

@@ -1,0 +1,158 @@
+pragma cashscript ^0.13.0;
+
+/*
+ * GameOfLife - Conway's Game of Life as a self-funding CashTokens covenant.
+ *
+ * The game state lives in the commitment of a single mutable NFT of `stateCategory`,
+ * which never leaves this contract. Anyone may advance the game or start a new one;
+ * the contract pays the transaction fee out of its own balance (bounded by `maxFee`).
+ *
+ * Board encoding: `width * height` cells, row-major, packed as a big-endian bit string
+ * (cell (x, y) is bit index y * width + x, the MSB of byte 0 is bit index 0).
+ * `width * height` must be a multiple of 8.
+ *
+ * NFT commitment layout (121 bytes):
+ *   [0, 4)     gameId      (VM number padded to 4 bytes)
+ *   [4, 8)     generation  (VM number padded to 4 bytes)
+ *   [8, 9)     status      0x00 = running, 0x01 = ended (a new game may be started)
+ *   [9, 121)   history     7 x 16-byte board digests (sha256 truncated), newest first.
+ *                          history[0] is the digest of the current board.
+ *
+ * A game ends when the board dies out, repeats any of the last 7 boards (still lifes and
+ * oscillators with period <= 7) or reaches `maxGenerations`. An ended game can always be
+ * replaced by a new one, so the contract recovers from every ending on its own.
+ *
+ * The full board is never stored on-chain in the commitment; it is revealed as the unlocking
+ * argument of every transaction, which also makes the whole history replayable from the chain.
+ */
+contract GameOfLife(
+    bytes32 stateCategory,
+    int width,
+    int height,
+    int maxGenerations,
+    int maxFee
+) {
+    // Advance the running game by one generation.
+    function step(bytes board) {
+        require(this.activeInputIndex == 0);
+        require(tx.inputs[0].tokenCategory == stateCategory + 0x01);
+
+        bytes commitment = tx.inputs[0].nftCommitment;
+        require(commitment.length == 121);
+        require(commitment.slice(8, 9) == 0x00, "game has ended");
+        bytes history = commitment.slice(9, 121);
+
+        int size = width * height / 8;
+        require(board.length == size);
+        require(sha256(board).slice(0, 16) == history.slice(0, 16), "board does not match state");
+
+        // Column masks: a bit at x = 0 in every row, then x = width - 1 in every row.
+        bytes firstCol = 0x80 + toPaddedBytes(0, size - 1);
+        int rows = 1;
+        do {
+            firstCol = firstCol | (firstCol >> (rows * width));
+            rows = rows * 2;
+        } while (rows < height);
+        bytes notFirstCol = ~firstCol;
+        bytes notLastCol = ~(firstCol >> (width - 1));
+
+        // Neighbour in the east (x + 1) and the west (x - 1) of every cell.
+        bytes east = (board << 1) & notLastCol;
+        bytes west = (board >> 1) & notFirstCol;
+
+        // Two-bit sum of (west, self, east) for every cell, used for the rows above and below.
+        bytes ew = east ^ west;
+        bytes row0 = ew ^ board;
+        bytes row1 = (east & west) | (board & ew);
+
+        // Row above (y - 1) and row below (y + 1).
+        bytes up0 = row0 >> width;
+        bytes up1 = row1 >> width;
+        bytes down0 = row0 << width;
+        bytes down1 = row1 << width;
+
+        // Add up + down + (east + west): bit 0 of the sum and the carry into bit 1.
+        bytes ud0 = up0 ^ down0;
+        bytes sum0 = ud0 ^ ew;
+        bytes carry0 = (up0 & down0) | (ew & ud0);
+
+        // Bit 1 inputs: up1, down1, (east & west), carry0. The cell has 2 or 3 neighbours
+        // exactly when one of those four is set.
+        bytes mid1 = east & west;
+        bytes ud1 = up1 ^ down1;
+        bytes mc1 = mid1 ^ carry0;
+        bytes sum1 = ud1 ^ mc1;
+        bytes twoOrMore = (up1 & down1) | (mid1 & carry0) | (ud1 & mc1);
+
+        bytes next = sum1 & ~twoOrMore & (sum0 | board);
+
+        // Detect the end of the game.
+        bytes digest = sha256(next).slice(0, 16);
+        bool ended = next == toPaddedBytes(0, size);
+        for (int h = 0; h < 112; h = h + 16) {
+            if (history.slice(h, h + 16) == digest) {
+                ended = true;
+            }
+        }
+        int generation = int(commitment.slice(4, 8)) + 1;
+        if (generation >= maxGenerations) {
+            ended = true;
+        }
+        bytes status = 0x00;
+        if (ended) {
+            status = 0x01;
+        }
+
+        bytes newCommitment = commitment.slice(0, 4) + toPaddedBytes(generation, 4) + status
+            + digest + history.slice(0, 96);
+        // The NFT stays here with the new state and every input's value is carried over,
+        // minus a bounded fee that pays for this transaction.
+        int total = 0;
+        for (int i = 0; i < tx.inputs.length; i = i + 1) {
+            total = total + tx.inputs[i].value;
+        }
+        require(tx.outputs.length == 1);
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == stateCategory + 0x01);
+        require(tx.outputs[0].nftCommitment == newCommitment);
+        require(tx.outputs[0].tokenAmount == 0);
+        require(tx.outputs[0].value >= total - maxFee, "fee too high");
+    }
+
+    // Start a new game once the previous one has ended.
+    function newGame(bytes board) {
+        require(this.activeInputIndex == 0);
+        require(tx.inputs[0].tokenCategory == stateCategory + 0x01);
+
+        bytes commitment = tx.inputs[0].nftCommitment;
+        require(commitment.length == 121);
+        require(commitment.slice(8, 9) == 0x01, "game is still running");
+
+        int size = width * height / 8;
+        require(board.length == size);
+        require(board != toPaddedBytes(0, size), "board is empty");
+
+        int gameId = int(commitment.slice(0, 4)) + 1;
+        bytes newCommitment = toPaddedBytes(gameId, 4) + toPaddedBytes(0, 4) + 0x00
+            + sha256(board).slice(0, 16) + toPaddedBytes(0, 96);
+        // The NFT stays here with the new state and every input's value is carried over,
+        // minus a bounded fee that pays for this transaction.
+        int total = 0;
+        for (int i = 0; i < tx.inputs.length; i = i + 1) {
+            total = total + tx.inputs[i].value;
+        }
+        require(tx.outputs.length == 1);
+        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == stateCategory + 0x01);
+        require(tx.outputs[0].nftCommitment == newCommitment);
+        require(tx.outputs[0].tokenAmount == 0);
+        require(tx.outputs[0].value >= total - maxFee, "fee too high");
+    }
+
+    // Plain BCH sent to this contract is merged into the game when it is advanced.
+    function absorb() {
+        require(this.activeInputIndex > 0);
+        require(tx.inputs[0].tokenCategory == stateCategory + 0x01);
+        require(tx.inputs[0].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
+    }
+}
