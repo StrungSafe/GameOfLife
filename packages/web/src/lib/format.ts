@@ -9,7 +9,6 @@ export const END_REASONS: Record<string, { title: string; emoji: string }> = {
   extinct: { title: 'Everyone died out', emoji: '💀' },
   still: { title: 'Frozen in a still life', emoji: '🧊' },
   oscillating: { title: 'Stuck in a loop', emoji: '🔁' },
-  limit: { title: 'Reached the generation limit', emoji: '🏁' },
 };
 
 export const shortTxid = (txid: string): string => `${txid.slice(0, 8)}…${txid.slice(-6)}`;

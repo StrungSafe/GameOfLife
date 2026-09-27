@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Board,
   DEFAULT_PARAMS,
+  MAX_GENERATIONS_PER_MOVE,
   NETWORKS,
   NotEnoughFundsError,
   replayGame,
@@ -77,15 +78,33 @@ export default function App() {
     setAutoPlay(false);
   }, [push]);
 
-  const step = useCallback(async (quiet = false) => {
+  // A move that advances several generations is shown one generation at a time.
+  const [playback, setPlayback] = useState<{ frames: Board[]; index: number; firstGeneration: number } | null>(null);
+  const frameMs = Math.max(180, settings.animationMs + 80);
+  useEffect(() => {
+    if (!playback) return undefined;
+    const timer = window.setTimeout(() => setPlayback((current) => {
+      if (!current || current.index >= current.frames.length - 1) return null;
+      return { ...current, index: current.index + 1 };
+    }), frameMs);
+    return () => window.clearTimeout(timer);
+  }, [playback, frameMs]);
+
+  const step = useCallback(async (generations = 1, quiet = false) => {
     try {
-      const result = await game.step();
+      const result = await game.step(generations);
+      if (result.frames.length > 1) {
+        setPlayback({ frames: result.frames, index: 0, firstGeneration: result.state.generation - result.generations + 1 });
+      }
       if (result.endReason) {
         const reason = END_REASONS[result.endReason];
         push({ kind: 'info', message: `${reason.emoji} Game over: ${reason.title}. Time for a new game!` });
         setAutoPlay(false);
       } else if (!quiet) {
-        push({ kind: 'success', message: `Generation ${result.state.generation} is on the blockchain!`, link: explorerLink(result.txid) });
+        const what = result.generations > 1
+          ? `Generations ${result.state.generation - result.generations + 1}-${result.state.generation} are`
+          : `Generation ${result.state.generation} is`;
+        push({ kind: 'success', message: `${what} on the blockchain!`, link: explorerLink(result.txid) });
       }
     } catch (error) {
       handleError(error);
@@ -96,14 +115,15 @@ export default function App() {
   const autoTimer = useRef<number | undefined>(undefined);
   useEffect(() => {
     window.clearTimeout(autoTimer.current);
-    if (!autoPlay || busy || mode !== 'live' || !snapshot) return undefined;
+    if (!autoPlay || busy || playback || mode !== 'live' || !snapshot) return undefined;
     if (snapshot.state.ended || snapshot.state.gameId === 0 || !snapshot.funding.canMove) {
       setAutoPlay(false);
       return undefined;
     }
-    autoTimer.current = window.setTimeout(() => { void step(true); }, AUTO_PLAY_DELAY);
+    // Auto-play uses the biggest moves: the cheapest way to watch a game unfold.
+    autoTimer.current = window.setTimeout(() => { void step(MAX_GENERATIONS_PER_MOVE, true); }, AUTO_PLAY_DELAY);
     return () => window.clearTimeout(autoTimer.current);
-  }, [autoPlay, busy, mode, snapshot, step]);
+  }, [autoPlay, busy, playback, mode, snapshot, step]);
 
   const startEditing = () => {
     if (snapshot && !snapshot.funding.canMove) {
@@ -171,7 +191,9 @@ export default function App() {
     ? draft
     : mode === 'replay' && replay
       ? replay.frames[replay.index]
-      : snapshot?.board ?? emptyBoard;
+      : playback
+        ? playback.frames[playback.index]
+        : snapshot?.board ?? emptyBoard;
 
   const animationMs = mode === 'replay' && replay
     ? Math.min(settings.animationMs, (1000 / replay.fps) * 0.9)
@@ -184,6 +206,9 @@ export default function App() {
     if (mode === 'replay' && replay) return `Replay · generation ${replay.index}`;
     if (!snapshot) return null;
     if (snapshot.state.gameId === 0) return 'Waiting for the first game';
+    if (playback) {
+      return `Game #${snapshot.state.gameId} · generation ${playback.firstGeneration + playback.index} · ${playback.frames[playback.index].population()} alive`;
+    }
     return `Game #${snapshot.state.gameId} · generation ${snapshot.state.generation} · ${snapshot.board?.population() ?? 0} alive`;
   })();
 
@@ -221,7 +246,7 @@ export default function App() {
 
       <main className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-4 lg:flex-row lg:overflow-hidden`}>
         <section
-          className="card relative flex shrink-0 flex-col p-2 sm:p-3 max-lg:min-h-64 lg:min-h-0 lg:flex-1"
+          className={`card relative flex shrink-0 flex-col p-2 sm:p-3 lg:min-h-0 lg:flex-1 ${snapshot ? "max-lg:min-h-64" : "max-lg:min-h-[26rem]"}`}
           style={{ '--board-aspect': `${width} / ${height}` } as React.CSSProperties}
         >
           <div className="pointer-events-none absolute top-4 left-4 z-10 flex flex-wrap gap-2 sm:top-5 sm:left-5">
@@ -255,12 +280,20 @@ export default function App() {
             />
           </div>
 
-          {!deployment && (
+          {!deployment && (game.discovering || (!game.games && !game.discoverError)) && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
+              <div className="card max-w-md space-y-3 p-6 text-center">
+                <GliderLogo className="mx-auto size-14 animate-spin [animation-duration:3s]" />
+                <p className="font-display text-xl">Looking for games on {network.label}…</p>
+              </div>
+            </div>
+          )}
+          {!deployment && !game.discovering && (game.games || game.discoverError) && (
             <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
               <div className="card max-w-md animate-pop-in space-y-4 p-6 text-center">
                 <GliderLogo className="mx-auto size-16" />
                 <h2 className="font-display text-3xl font-semibold">No game on {network.label} yet</h2>
-                <p className="opacity-80">Deploy the Game of Life contracts on this network, or paste the ID of an existing game in the settings.</p>
+                <p className="opacity-80">{game.discoverError ? game.discoverError : 'Nobody has deployed the Game of Life contracts on this network yet. Be the first!'}</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   <button type="button" className="btn-primary" onClick={() => setDialog('deploy')}><Icon name="rocket" /> Deploy a game</button>
                   <button type="button" className="btn-ghost" onClick={() => setDialog('settings')}>Settings</button>
@@ -327,7 +360,7 @@ export default function App() {
                 snapshot={snapshot}
                 busy={busy}
                 autoPlay={autoPlay}
-                onStep={() => void step()}
+                onStep={(generations) => void step(generations)}
                 onToggleAuto={() => setAutoPlay((value) => !value)}
                 onNewGame={startEditing}
                 onReplay={replayCurrent}
@@ -338,8 +371,11 @@ export default function App() {
         )}
         {focus && mode === 'live' && snapshot && snapshot.state.gameId > 0 && !snapshot.state.ended && (
           <div className="fixed bottom-6 left-1/2 z-30 hidden -translate-x-1/2 gap-2 lg:flex">
-            <button type="button" className="btn-primary" onClick={() => void step()} disabled={!!busy || autoPlay || !snapshot.funding.canMove}>
+            <button type="button" className="btn-primary" onClick={() => void step()} disabled={!!busy || !!playback || autoPlay || !snapshot.funding.canMove}>
               <Icon name="next" /> Next generation
+            </button>
+            <button type="button" className="btn-sun" onClick={() => void step(MAX_GENERATIONS_PER_MOVE)} disabled={!!busy || !!playback || autoPlay || !snapshot.funding.canMove}>
+              <Icon name="sparkle" /> +{MAX_GENERATIONS_PER_MOVE}
             </button>
             <button type="button" className={autoPlay ? 'btn-pink' : 'btn-ghost'} onClick={() => setAutoPlay((value) => !value)}>
               <Icon name={autoPlay ? 'pause' : 'play'} /> {autoPlay ? 'Stop' : 'Auto-play'}
@@ -349,7 +385,19 @@ export default function App() {
       </main>
 
       {dialog === 'settings' && (
-        <SettingsDialog settings={settings} update={update} dark={dark} onClose={() => setDialog(null)} onDeploy={() => setDialog('deploy')} />
+        <SettingsDialog
+          settings={settings}
+          update={update}
+          dark={dark}
+          games={game.games}
+          discovering={game.discovering}
+          discoverError={game.discoverError}
+          onDiscover={() => void game.discover()}
+          activeDeployment={deployment}
+          onClose={() => setDialog(null)}
+          onDeploy={() => setDialog('deploy')}
+          canDeploy={!SANDBOX}
+        />
       )}
       {dialog === 'fund' && client && (
         <FundDialog
@@ -377,6 +425,7 @@ export default function App() {
           onClose={() => setDialog(null)}
           onDeployed={(created, txid) => {
             update({ deployments: { ...settings.deployments, [created.network]: created } });
+            void game.discover();
             setDialog(null);
             push({ kind: 'success', message: 'Your game is live on the blockchain! Start the first game.', link: explorerLink(txid) });
           }}

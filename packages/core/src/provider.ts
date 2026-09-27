@@ -25,27 +25,35 @@ export const connect = (network: NetworkName, server?: string, options: { persis
   if (!options.persistent) {
     return { network, server: hostname, provider, reader: electrumReader(provider), close: async () => {} };
   }
-  // Open lazily and transparently before the first request.
+  // Open lazily and transparently before the first request, and again after the socket closed.
   let opening: Promise<void> | undefined;
-  const ensureOpen = () => {
+  let closing: Promise<unknown> = Promise.resolve();
+  const ensureOpen = async () => {
+    await closing;
     opening ??= provider.connect().catch((error: unknown) => {
       opening = undefined;
       throw error;
     });
     return opening;
   };
+  const reset = () => {
+    opening = undefined;
+    closing = provider.disconnect().catch(() => undefined);
+    return closing;
+  };
   const perform = provider.performRequest.bind(provider);
   provider.performRequest = async (name: string, ...parameters: unknown[]) => {
-    await ensureOpen();
-    try {
-      return await perform(name, ...(parameters as never[]));
-    } catch (error) {
-      // After a dropped socket (sleep, network change) reconnect on the next request.
-      if (/connect|closed|socket|timed? ?out/i.test(error instanceof Error ? error.message : String(error))) {
-        opening = undefined;
-        await provider.disconnect().catch(() => undefined);
+    for (let attempt = 0; ; attempt += 1) {
+      await ensureOpen();
+      try {
+        return await perform(name, ...(parameters as never[]));
+      } catch (error) {
+        // After a dropped socket (sleep, network change) reconnect and retry once.
+        const dropped = /connect|closed|socket|timed? ?out/i.test(error instanceof Error ? error.message : String(error));
+        if (!dropped) throw error;
+        await reset();
+        if (attempt > 0) throw error;
       }
-      throw error;
     }
   };
   return {
@@ -54,10 +62,7 @@ export const connect = (network: NetworkName, server?: string, options: { persis
     provider,
     reader: electrumReader(provider),
     close: async () => {
-      if (opening) {
-        opening = undefined;
-        await provider.disconnect().catch(() => undefined);
-      }
+      if (opening) await reset();
     },
   };
 };

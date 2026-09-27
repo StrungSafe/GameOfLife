@@ -8,7 +8,7 @@ export interface Settings {
   network: NetworkName;
   /** Custom Fulcrum server per network (empty = default). */
   servers: Partial<Record<NetworkName, string>>;
-  /** Custom game per network (overrides the built-in deployments). */
+  /** The game picked per network (otherwise the most active game found on chain). */
   deployments: Partial<Record<NetworkName, Deployment>>;
   animation: AnimationStyle;
   /** Animation length in milliseconds. */
@@ -49,7 +49,6 @@ const load = (): Settings => {
           category: game,
           width: Number(params.get('w') ?? 128),
           height: Number(params.get('h') ?? 80),
-          maxGenerations: Number(params.get('max') ?? 1000),
           maxFee: Number(params.get('fee') ?? 5000),
         });
         settings = { ...settings, deployments: { ...settings.deployments, [network]: deployment } };
@@ -68,7 +67,6 @@ export const shareLink = (deployment: Deployment): string => {
     game: deployment.category,
     w: String(deployment.width),
     h: String(deployment.height),
-    max: String(deployment.maxGenerations),
     fee: String(deployment.maxFee),
   }).toString();
   return url.toString();

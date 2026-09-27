@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Board, NETWORKS, NETWORK_NAMES, KNOWN_DEPLOYMENTS, DEFAULT_PARAMS, validateDeployment, type NetworkName } from '@gol/core';
+import { Board, NETWORKS, NETWORK_NAMES, type Deployment, type DiscoveredGame, type NetworkName } from '@gol/core';
 import { BoardCanvas } from './BoardCanvas';
 import { CopyButton, Icon, Modal } from './ui';
 import { shareLink, type AnimationStyle, type Settings, type Theme } from '../hooks/useSettings';
+import { formatSats } from '../lib/format';
 
 const ANIMATIONS: { id: AnimationStyle; name: string; blurb: string }[] = [
   { id: 'pop', name: 'Pop', blurb: 'Cells bounce in and shrink away' },
@@ -27,24 +28,31 @@ function AnimationPreview({ style, duration, dark }: { style: AnimationStyle; du
   );
 }
 
-export function SettingsDialog({ settings, update, dark, onClose, onDeploy }: {
+export function SettingsDialog({ settings, update, dark, games, discovering, discoverError, onDiscover, activeDeployment, onClose, onDeploy, canDeploy }: {
   settings: Settings;
   update: (patch: Partial<Settings>) => void;
   dark: boolean;
+  /** Games found on chain for the selected network, most active first. */
+  games: DiscoveredGame[] | null;
+  discovering: boolean;
+  discoverError: string | null;
+  onDiscover: () => void;
+  /** The game being played right now (chosen or automatic). */
+  activeDeployment?: Deployment;
   onClose: () => void;
   onDeploy: () => void;
+  canDeploy: boolean;
 }) {
   const { network } = settings;
-  const deployment = settings.deployments[network] ?? KNOWN_DEPLOYMENTS[network];
+  const chosen = settings.deployments[network];
   const [server, setServer] = useState(settings.servers[network] ?? '');
-  const [category, setCategory] = useState('');
-  const [categoryError, setCategoryError] = useState('');
 
   useEffect(() => {
     setServer(settings.servers[network] ?? '');
-    setCategory('');
-    setCategoryError('');
   }, [network, settings.servers]);
+
+  // Show fresh game states whenever the dialog opens.
+  useEffect(() => { onDiscover(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectNetwork = (name: NetworkName) => update({ network: name });
 
@@ -55,22 +63,18 @@ export function SettingsDialog({ settings, update, dark, onClose, onDeploy }: {
     update({ servers });
   };
 
-  const useGame = () => {
-    try {
-      const custom = validateDeployment({ ...DEFAULT_PARAMS, network, category: category.trim() });
-      update({ deployments: { ...settings.deployments, [network]: custom } });
-      setCategory('');
-      setCategoryError('');
-    } catch (error) {
-      setCategoryError(error instanceof Error ? error.message : String(error));
-    }
-  };
-
-  const resetGame = () => {
+  const selectGame = (deployment?: Deployment) => {
     const deployments = { ...settings.deployments };
-    delete deployments[network];
+    if (deployment) deployments[network] = deployment;
+    else delete deployments[network];
     update({ deployments });
   };
+
+  const optionClass = (selected: boolean) => `w-full rounded-2xl border-2 p-3 text-left transition-all ${
+    selected
+      ? 'border-ink bg-sky/20 shadow-[0_4px_0_0_var(--color-ink)] dark:border-sky'
+      : 'border-ink/15 hover:border-ink/40 dark:border-white/15 dark:hover:border-white/40'
+  }`;
 
   return (
     <Modal title="Settings" onClose={onClose} wide icon={<Icon name="gear" className="size-7 text-grape" />}>
@@ -95,7 +99,7 @@ export function SettingsDialog({ settings, update, dark, onClose, onDeploy }: {
             ))}
           </div>
           {network === 'mainnet' && (
-            <p className="mt-2 flex items-center gap-2 text-sm text-bubble"><Icon name="warning" className="size-4" /> Mainnet moves are paid with real BCH (about 2,100 sats each).</p>
+            <p className="mt-2 flex items-center gap-2 text-sm text-bubble"><Icon name="warning" className="size-4" /> Mainnet moves are paid with real BCH (about 2,200 sats per move of up to 8 generations).</p>
           )}
         </section>
 
@@ -120,39 +124,48 @@ export function SettingsDialog({ settings, update, dark, onClose, onDeploy }: {
         </section>
 
         <section className="space-y-3">
-          <h3 className="label">Game on {NETWORKS[network].label}</h3>
-          {deployment ? (
-            <div className="space-y-2 rounded-2xl bg-ink/5 p-3 dark:bg-white/5">
-              <div className="text-xs opacity-60">Game token category</div>
-              <code className="block text-xs break-all">{deployment.category}</code>
-              <div className="text-xs opacity-60">{deployment.width} x {deployment.height} board · max {deployment.maxGenerations} generations per game</div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <CopyButton text={shareLink(deployment)} label="Copy share link" />
-                {settings.deployments[network] && KNOWN_DEPLOYMENTS[network] && (
-                  <button type="button" className="btn-ghost btn-sm" onClick={resetGame}>Use the default game</button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm opacity-70">No game is set up for this network yet.</p>
-          )}
-          <div>
-            <label className="label" htmlFor="category">Play another game</label>
-            <div className="flex gap-2">
-              <input
-                id="category"
-                className="field"
-                placeholder="Paste a game token category (64 hex characters)"
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-              />
-              <button type="button" className="btn-sky btn-sm" onClick={useGame} disabled={!category.trim()}>Use</button>
-            </div>
-            {categoryError && <p className="mt-1 text-sm text-bubble">{categoryError}</p>}
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="label mb-0">Games on {NETWORKS[network].label}</h3>
+            <button type="button" className="btn-ghost btn-sm" onClick={onDiscover} disabled={discovering}>
+              <Icon name="refresh" className={`size-4 ${discovering ? 'animate-spin' : ''}`} /> {discovering ? 'Searching…' : 'Refresh'}
+            </button>
           </div>
-          <button type="button" className="btn-sun btn-sm" onClick={onDeploy}>
-            <Icon name="rocket" className="size-4" /> Deploy a new game contract
+          <p className="text-xs opacity-70">Every game announces itself in an on-chain registry, so the app finds them all by itself.</p>
+          <button type="button" className={optionClass(!chosen)} onClick={() => selectGame(undefined)}>
+            <div className="font-display text-lg font-semibold">✨ Most active game</div>
+            <div className="text-xs opacity-70">Automatically follow the liveliest game on this network.</div>
           </button>
+          {discoverError && <p className="rounded-2xl bg-bubble/15 p-3 text-sm">{discoverError}</p>}
+          {games && games.length === 0 && <p className="text-sm opacity-70">No games on this network yet - deploy the first one!</p>}
+          <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+            {games?.map((game) => {
+              const s = game.snapshot;
+              const status = !s ? 'Unavailable'
+                : s.state.gameId === 0 ? 'Waiting for its first game'
+                  : s.state.ended ? `Game #${s.state.gameId} over at generation ${s.state.generation}`
+                    : `Game #${s.state.gameId} live · generation ${s.state.generation}`;
+              return (
+                <button key={game.deployment.category} type="button" className={optionClass(chosen?.category === game.deployment.category)} onClick={() => selectGame(game.deployment)}>
+                  <div className="flex items-center justify-between gap-2">
+                    <code className="truncate text-xs">{game.deployment.category}</code>
+                    {activeDeployment?.category === game.deployment.category && <span className="pill shrink-0 bg-mint/25 text-emerald-700 dark:text-mint">Playing</span>}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold">{status}</div>
+                  <div className="text-xs opacity-70">
+                    {game.deployment.width} x {game.deployment.height} board{s ? ` · ${formatSats(s.funding.balance, true)} fuel` : ''}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {activeDeployment && <CopyButton text={shareLink(activeDeployment)} label="Copy link to this game" />}
+            {canDeploy && (
+              <button type="button" className="btn-sun btn-sm" onClick={onDeploy}>
+                <Icon name="rocket" className="size-4" /> Deploy a new game
+              </button>
+            )}
+          </div>
         </section>
 
         <section>

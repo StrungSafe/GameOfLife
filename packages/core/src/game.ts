@@ -7,7 +7,7 @@ import {
   encodeState,
   endReasonOf,
   newGameState,
-  stepState,
+  planMove,
   type EndReason,
   type GameState,
 } from './state.js';
@@ -18,13 +18,19 @@ export const FEE_RATE = 1;
 /** Extra satoshis added on top of the exact size-based fee. */
 const FEE_MARGIN = 2n;
 /** At most this many funding coins are merged into the game per move. */
-export const MAX_FUNDING_INPUTS = 25;
+export const MAX_FUNDING_INPUTS = 20;
+/**
+ * Most generations a single move advances. A move costs the same whatever it advances, so
+ * bigger moves are cheaper per generation; the limit keeps each move within the VM's
+ * operation budget with room to spare (9 is the most that fits a 128 x 80 board).
+ */
+export const MAX_GENERATIONS_PER_MOVE = 8;
 
 /** Dust limit of the state output (token prefix with a 121-byte commitment, P2SH32). */
 export const STATE_OUTPUT_DUST = BigInt(444 + 3 * (8 + 3 + 1 + 32 + 1 + 1 + 121 + 35));
 
 export interface FundingStatus {
-  /** Every satoshi the game can spend: state token + vault + loose coins at the game address. */
+  /** Every satoshi the game can spend: the state token plus the coins at the funding address. */
   balance: bigint;
   /** Fee of the next move. */
   moveFee: bigint;
@@ -47,15 +53,18 @@ export interface Snapshot {
   endReason?: EndReason;
   /** Coins waiting at the funding (vault) address. */
   vaultUtxos: Utxo[];
-  /** Plain coins sent straight to the game address. */
-  looseUtxos: Utxo[];
   funding: FundingStatus;
 }
 
 export interface MoveResult {
   txid: string;
   fee: bigint;
+  /** The new board. */
   board: Board;
+  /** Every board the move went through, one per generation (just the board for a new game). */
+  frames: Board[];
+  /** Generations advanced (0 for a new game). */
+  generations: number;
   state: GameState;
   endReason?: EndReason;
   /** Predicted snapshot after this move (valid as soon as the transaction is accepted). */
@@ -69,6 +78,8 @@ export class NotEnoughFundsError extends Error {
     this.name = 'NotEnoughFundsError';
   }
 }
+
+const sum = (utxos: Utxo[]): bigint => utxos.reduce((total, utxo) => total + utxo.satoshis, 0n);
 
 export class GameClient {
   readonly contracts: GameContracts;
@@ -91,8 +102,7 @@ export class GameClient {
   addresses(): { label: string; address: string; description: string }[] {
     return [
       { label: 'Funding address', address: this.fundingAddress, description: 'Send BCH here from any wallet to pay for moves.' },
-      { label: 'Game contract', address: this.gameAddress, description: 'Holds the game state token. Plain BCH sent here is merged in too.' },
-      { label: 'Game contract (non-token)', address: this.contracts.game.address, description: 'Same contract as above, for wallets without CashToken support.' },
+      { label: 'Game contract', address: this.gameAddress, description: 'Holds the game state token. Do not send BCH here - use the funding address.' },
     ];
   }
 
@@ -109,21 +119,17 @@ export class GameClient {
     const stateUtxo = gameUtxos.find((utxo) => this.isStateToken(utxo));
     if (!stateUtxo) {
       throw new Error(`Game state token ${this.deployment.category} was not found on ${this.deployment.network}. `
-        + 'Check the network and game category in the settings.');
+        + 'Check the network and game in the settings.');
     }
     const state = decodeState(stateUtxo.token!.nft!.commitment);
     const board = await this.boardOf(stateUtxo, state);
-    const endReason = board ? endReasonOf(state, board, this.deployment.maxGenerations) : undefined;
-    const looseUtxos = gameUtxos.filter((utxo) => !utxo.token);
-    const plainVault = vaultUtxos.filter((utxo) => !utxo.token);
     const snapshot: Snapshot = {
       deployment: this.deployment,
       stateUtxo,
       state,
       board,
-      endReason,
-      vaultUtxos: plainVault,
-      looseUtxos,
+      endReason: board ? endReasonOf(state, board) : undefined,
+      vaultUtxos: vaultUtxos.filter((utxo) => !utxo.token),
       funding: undefined as unknown as FundingStatus,
     };
     snapshot.funding = this.fundingStatus(snapshot);
@@ -136,8 +142,8 @@ export class GameClient {
     const tx = decodeTx(await this.provider.getRawTransaction(stateUtxo.txid));
     const move = parseGameUnlocking(tx.inputs[0].unlockingBytecode, this.redeemScript());
     if (!move.boardBytes) throw new Error('Could not find the board in the state transaction');
-    const revealed = Board.fromBytes(this.deployment.width, this.deployment.height, move.boardBytes);
-    const board = move.kind === 'step' ? revealed.next() : revealed;
+    let board = Board.fromBytes(this.deployment.width, this.deployment.height, move.boardBytes);
+    for (let i = 0; i < move.generations; i += 1) board = board.next();
     if (binToHex(board.digest()) !== binToHex(state.history[0])) {
       throw new Error('The reconstructed board does not match the on-chain state');
     }
@@ -148,31 +154,20 @@ export class GameClient {
     return hexToBin(this.contracts.game.bytecode);
   }
 
-  private fundingInputs(snapshot: Snapshot): { loose: Utxo[]; vault: Utxo[] } {
-    const sorted = [
-      ...snapshot.looseUtxos.map((utxo) => ({ utxo, loose: true })),
-      ...snapshot.vaultUtxos.map((utxo) => ({ utxo, loose: false })),
-    ].sort((a, b) => Number(b.utxo.satoshis - a.utxo.satoshis)).slice(0, MAX_FUNDING_INPUTS);
-    return {
-      loose: sorted.filter((entry) => entry.loose).map((entry) => entry.utxo),
-      vault: sorted.filter((entry) => !entry.loose).map((entry) => entry.utxo),
-    };
+  private fundingInputs(snapshot: Snapshot): Utxo[] {
+    return [...snapshot.vaultUtxos].sort((a, b) => Number(b.satoshis - a.satoshis)).slice(0, MAX_FUNDING_INPUTS);
   }
 
   /** Build a move; `fee` of null builds a sizing draft with a placeholder output amount. */
-  private buildMove(snapshot: Snapshot, kind: 'step' | 'newGame', board: Board, nextState: GameState, fee: bigint | null): TransactionBuilder {
+  private buildMove(snapshot: Snapshot, board: Board, generations: number, nextState: GameState, fee: bigint | null): TransactionBuilder {
     const { game, vault } = this.contracts;
     const funding = this.fundingInputs(snapshot);
-    const total = [snapshot.stateUtxo, ...funding.loose, ...funding.vault]
-      .reduce((sum, utxo) => sum + utxo.satoshis, 0n);
-    const unlocker = kind === 'step' ? game.unlock.step(board.toBytes()) : game.unlock.newGame(board.toBytes());
     const builder = new TransactionBuilder({ provider: this.provider })
-      .addInput(snapshot.stateUtxo, unlocker);
-    if (funding.loose.length) builder.addInputs(funding.loose, game.unlock.absorb());
-    if (funding.vault.length) builder.addInputs(funding.vault, vault.unlock.absorb());
+      .addInput(snapshot.stateUtxo, game.unlock.play(board.toBytes(), BigInt(generations)));
+    if (funding.length) builder.addInputs(funding, vault.unlock.absorb());
     return builder.addOutput({
       to: this.gameAddress,
-      amount: fee === null ? 100_000n : total - fee,
+      amount: fee === null ? 100_000n : sum([snapshot.stateUtxo, ...funding]) - fee,
       token: {
         category: this.deployment.category,
         amount: 0n,
@@ -182,24 +177,21 @@ export class GameClient {
   }
 
   /** Exact fee for a move, from the size of the fully built transaction. */
-  private moveFee(snapshot: Snapshot, kind: 'step' | 'newGame', board: Board, nextState: GameState): bigint {
-    const size = this.buildMove(snapshot, kind, board, nextState, null).getTransactionSize();
+  private moveFee(snapshot: Snapshot, board: Board, generations: number, nextState: GameState): bigint {
+    const size = this.buildMove(snapshot, board, generations, nextState, null).getTransactionSize();
     return BigInt(Math.ceil(Number(size) * FEE_RATE)) + FEE_MARGIN;
   }
 
   /** Estimate what the next move costs and whether the contracts can afford it. */
   fundingStatus(snapshot: Snapshot): FundingStatus {
-    const funding = this.fundingInputs(snapshot);
-    const balance = [snapshot.stateUtxo, ...snapshot.looseUtxos, ...snapshot.vaultUtxos]
-      .reduce((sum, utxo) => sum + utxo.satoshis, 0n);
-    const spendable = [snapshot.stateUtxo, ...funding.loose, ...funding.vault]
-      .reduce((sum, utxo) => sum + utxo.satoshis, 0n);
+    const balance = sum([snapshot.stateUtxo, ...snapshot.vaultUtxos]);
+    const spendable = sum([snapshot.stateUtxo, ...this.fundingInputs(snapshot)]);
     const sample = snapshot.board ?? Board.empty(this.deployment.width, this.deployment.height);
-    const moveFee = this.moveFee(snapshot, 'step', sample, snapshot.state);
+    const moveFee = this.moveFee(snapshot, sample, 1, snapshot.state);
     const reserve = STATE_OUTPUT_DUST;
     const shortfall = spendable - moveFee >= reserve ? 0n : reserve + moveFee - spendable;
-    // A move without funding inputs is cheaper; use it for the long-run estimate.
-    const plainFee = BigInt(820 + (this.deployment.width * this.deployment.height) / 8);
+    // A move without funding inputs is a little cheaper; use it for the long-run estimate.
+    const plainFee = BigInt(920 + (this.deployment.width * this.deployment.height) / 8);
     const movesLeft = balance > reserve ? Number((balance - reserve) / plainFee) : 0;
     return { balance, moveFee, reserve, canMove: shortfall === 0n, movesLeft, shortfall };
   }
@@ -210,23 +202,23 @@ export class GameClient {
    */
   private async sendMove(
     snapshot: Snapshot,
-    kind: 'step' | 'newGame',
     board: Board,
+    generations: number,
     nextState: GameState,
-    nextBoard: Board,
+    frames: Board[],
     endReason?: EndReason,
   ): Promise<MoveResult> {
-    const fee = this.moveFee(snapshot, kind, board, nextState);
+    const fee = this.moveFee(snapshot, board, generations, nextState);
     const funding = this.fundingInputs(snapshot);
-    const spendable = [snapshot.stateUtxo, ...funding.loose, ...funding.vault]
-      .reduce((sum, utxo) => sum + utxo.satoshis, 0n);
+    const spendable = sum([snapshot.stateUtxo, ...funding]);
     if (fee > BigInt(this.deployment.maxFee)) throw new Error(`Move fee ${fee} exceeds the contract's maximum fee`);
     if (spendable - fee < STATE_OUTPUT_DUST) {
       const status = { ...snapshot.funding, canMove: false, shortfall: STATE_OUTPUT_DUST + fee - spendable };
       throw new NotEnoughFundsError(status, this.fundingAddress);
     }
-    const details = await this.buildMove(snapshot, kind, board, nextState, fee).send();
-    const spent = new Set([...funding.loose, ...funding.vault]);
+    const details = await this.buildMove(snapshot, board, generations, nextState, fee).send();
+    const spent = new Set(funding);
+    const nextBoard = frames[frames.length - 1];
     const next: Snapshot = {
       deployment: this.deployment,
       stateUtxo: {
@@ -243,21 +235,23 @@ export class GameClient {
       board: nextBoard,
       endReason,
       vaultUtxos: snapshot.vaultUtxos.filter((utxo) => !spent.has(utxo)),
-      looseUtxos: snapshot.looseUtxos.filter((utxo) => !spent.has(utxo)),
       funding: undefined as unknown as FundingStatus,
     };
     next.funding = this.fundingStatus(next);
-    return { txid: details.txid, fee, snapshot: next, board: nextBoard, state: nextState, endReason };
+    return { txid: details.txid, fee, snapshot: next, board: nextBoard, frames, generations, state: nextState, endReason };
   }
 
-  /** Advance the running game by one generation. */
-  async step(snapshot?: Snapshot): Promise<MoveResult> {
+  /**
+   * Advance the running game by up to `generations` generations in one transaction (capped at
+   * MAX_GENERATIONS_PER_MOVE, and stopping exactly where the game ends).
+   */
+  async step(snapshot?: Snapshot, generations = 1): Promise<MoveResult> {
     const current = snapshot ?? await this.fetchSnapshot();
     if (!current.board || current.state.ended) {
       throw new Error('There is no running game. Start a new game first.');
     }
-    const next = stepState(current.state, current.board, this.deployment.maxGenerations);
-    return this.sendMove(current, 'step', current.board, next.state, next.board, next.endReason);
+    const plan = planMove(current.state, current.board, Math.min(Math.max(1, generations), MAX_GENERATIONS_PER_MOVE));
+    return this.sendMove(current, current.board, plan.generations, plan.state, plan.frames, plan.endReason);
   }
 
   /** Start a new game with `board` as generation 0. Only allowed once the previous game ended. */
@@ -268,7 +262,6 @@ export class GameClient {
       throw new Error(`The board must be ${this.deployment.width}x${this.deployment.height}`);
     }
     if (board.isEmpty()) throw new Error('The board is empty. Bring some cells to life first.');
-    const state = newGameState(current.state, board);
-    return this.sendMove(current, 'newGame', board, state, board.clone());
+    return this.sendMove(current, board, 0, newGameState(current.state, board), [board.clone()]);
   }
 }

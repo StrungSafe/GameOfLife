@@ -1,5 +1,5 @@
 import { binToHex, hexToBin, bigIntToVmNumber, vmNumberToBigInt } from '@bitauth/libauth';
-import { Board, boardDigest } from './board.js';
+import type { Board } from './board.js';
 
 export const COMMITMENT_LENGTH = 121;
 export const HISTORY_DEPTH = 7;
@@ -15,7 +15,7 @@ export interface GameState {
   history: Uint8Array[];
 }
 
-export type EndReason = 'extinct' | 'still' | 'oscillating' | 'limit';
+export type EndReason = 'extinct' | 'still' | 'oscillating';
 
 const padNumber = (value: number, length: number): Uint8Array => {
   const encoded = bigIntToVmNumber(BigInt(value));
@@ -77,41 +77,53 @@ export const newGameState = (previous: GameState, board: Board): GameState => ({
 
 const sameDigest = (a: Uint8Array, b: Uint8Array): boolean => binToHex(a) === binToHex(b);
 
+export interface PlannedMove {
+  /** Every board this move produces, one per generation; the last one is the new board. */
+  frames: Board[];
+  /** Generations actually advanced (fewer than requested if the game ends first). */
+  generations: number;
+  state: GameState;
+  endReason?: EndReason;
+}
+
 /**
- * Mirror of the covenant's `step` state transition. Returns the next board, the next state and,
- * if the game ends with this move, why.
+ * Mirror of the covenant's `play(board, generations)` for a running game: advance up to
+ * `requested` generations, stopping early at the generation where the game ends (the board died
+ * out or repeated one of the 7 boards before it).
  */
-export const stepState = (
-  state: GameState,
-  board: Board,
-  maxGenerations: number,
-): { board: Board; state: GameState; endReason?: EndReason } => {
-  const next = board.next();
-  const digest = boardDigest(next.toBytes());
-  const generation = state.generation + 1;
+export const planMove = (state: GameState, board: Board, requested = 1): PlannedMove => {
+  if (!Number.isInteger(requested) || requested < 1) throw new Error('A move must advance at least one generation');
+  const frames: Board[] = [];
+  // Digests of the boards so far, newest first (the covenant's `recent`).
+  let recent = state.history;
+  let current = board;
   let endReason: EndReason | undefined;
-  if (next.isEmpty()) endReason = 'extinct';
-  else if (sameDigest(digest, state.history[0])) endReason = 'still';
-  else if (state.history.some((h) => sameDigest(h, digest))) endReason = 'oscillating';
-  else if (generation >= maxGenerations) endReason = 'limit';
+  while (frames.length < requested && !endReason) {
+    current = current.next();
+    frames.push(current);
+    const digest = current.digest();
+    if (current.isEmpty()) endReason = 'extinct';
+    else if (sameDigest(digest, recent[0])) endReason = 'still';
+    else if (recent.slice(0, HISTORY_DEPTH).some((h) => sameDigest(h, digest))) endReason = 'oscillating';
+    recent = [digest, ...recent];
+  }
   return {
-    board: next,
+    frames,
+    generations: frames.length,
     endReason,
     state: {
       gameId: state.gameId,
-      generation,
+      generation: state.generation + frames.length,
       ended: endReason !== undefined,
-      history: [digest, ...state.history.slice(0, HISTORY_DEPTH - 1)],
+      history: recent.slice(0, HISTORY_DEPTH),
     },
   };
 };
 
 /** Explain why an ended game ended, given its final board and state. */
-export const endReasonOf = (state: GameState, board: Board, maxGenerations: number): EndReason | undefined => {
+export const endReasonOf = (state: GameState, board: Board): EndReason | undefined => {
   if (!state.ended || state.gameId === 0) return undefined;
   if (board.isEmpty()) return 'extinct';
   if (sameDigest(state.history[0], state.history[1])) return 'still';
-  if (state.history.slice(1).some((h) => sameDigest(h, state.history[0]))) return 'oscillating';
-  if (state.generation >= maxGenerations) return 'limit';
-  return undefined;
+  return 'oscillating';
 };

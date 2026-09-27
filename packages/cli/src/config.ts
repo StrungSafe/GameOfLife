@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
-  KNOWN_DEPLOYMENTS,
   NETWORKS,
   validateDeployment,
   type Deployment,
@@ -14,7 +13,7 @@ export interface CliConfig {
   network: NetworkName;
   /** Custom Fulcrum server per network. */
   servers: Partial<Record<NetworkName, string>>;
-  /** The game to play per network (overrides the built-in deployments). */
+  /** The game to play per network (otherwise the most active game found on chain). */
   deployments: Partial<Record<NetworkName, Deployment>>;
   /** Throwaway deployer keys (WIF) per network, kept until a deployment succeeds. */
   deployerKeys: Partial<Record<NetworkName, string>>;
@@ -42,7 +41,7 @@ export const saveConfig = (config: CliConfig): void => {
 export const configPath = (): string => CONFIG_FILE;
 
 export const deploymentFor = (config: CliConfig, network: NetworkName): Deployment | undefined => {
-  const deployment = config.deployments[network] ?? KNOWN_DEPLOYMENTS[network];
+  const deployment = config.deployments[network];
   return deployment ? validateDeployment(deployment) : undefined;
 };
 

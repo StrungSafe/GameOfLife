@@ -1,4 +1,4 @@
-import { PATTERNS, type Pattern, type Snapshot } from '@gol/core';
+import { MAX_GENERATIONS_PER_MOVE, PATTERNS, type Pattern, type Snapshot } from '@gol/core';
 import { Icon, Stat } from './ui';
 import { END_REASONS, formatSats } from '../lib/format';
 
@@ -6,7 +6,7 @@ export function LivePanel({ snapshot, busy, autoPlay, onStep, onToggleAuto, onNe
   snapshot: Snapshot;
   busy: null | 'step' | 'newGame';
   autoPlay: boolean;
-  onStep: () => void;
+  onStep: (generations?: number) => void;
   onToggleAuto: () => void;
   onNewGame: () => void;
   onReplay: () => void;
@@ -57,13 +57,18 @@ export function LivePanel({ snapshot, busy, autoPlay, onStep, onToggleAuto, onNe
       <div className="card space-y-2 p-4">
         {running ? (
           <>
-            <button type="button" className="btn-primary w-full py-3 text-lg" onClick={onStep} disabled={!!busy || autoPlay || !funding.canMove}>
+            <button type="button" className="btn-primary w-full py-3 text-lg" onClick={() => onStep(1)} disabled={!!busy || autoPlay || !funding.canMove}>
               <Icon name="next" /> {busy === 'step' ? 'Evolving…' : 'Next generation'}
+            </button>
+            <button type="button" className="btn-sun w-full" onClick={() => onStep(MAX_GENERATIONS_PER_MOVE)} disabled={!!busy || autoPlay || !funding.canMove}>
+              <Icon name="sparkle" /> Next {MAX_GENERATIONS_PER_MOVE} generations
             </button>
             <button type="button" className={`${autoPlay ? 'btn-pink' : 'btn-ghost'} w-full`} onClick={onToggleAuto} disabled={!funding.canMove && !autoPlay}>
               <Icon name={autoPlay ? 'pause' : 'play'} /> {autoPlay ? 'Stop auto-play' : 'Auto-play'}
             </button>
-            <p className="text-center text-xs opacity-60">Every generation is a transaction paid by the contract (~{formatSats(funding.moveFee)}).</p>
+            <p className="text-center text-xs opacity-60">
+              Each move is a transaction paid by the contract (~{formatSats(funding.moveFee)}). Advancing {MAX_GENERATIONS_PER_MOVE} at once costs the same, so it is {MAX_GENERATIONS_PER_MOVE}x cheaper per generation.
+            </p>
           </>
         ) : (
           <button type="button" className="btn-pink w-full py-3 text-lg" onClick={onNewGame} disabled={!!busy}>

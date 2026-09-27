@@ -15,162 +15,92 @@ export default {
       "type": "int"
     },
     {
-      "name": "maxGenerations",
-      "type": "int"
-    },
-    {
       "name": "maxFee",
       "type": "int"
     }
   ],
   "abi": [
     {
-      "name": "step",
+      "name": "play",
       "inputs": [
         {
           "name": "board",
           "type": "bytes"
-        }
-      ]
-    },
-    {
-      "name": "newGame",
-      "inputs": [
+        },
         {
-          "name": "board",
-          "type": "bytes"
+          "name": "generations",
+          "type": "int"
         }
       ]
-    },
-    {
-      "name": "absorb",
-      "inputs": []
     }
   ],
-  "bytecode": "OP_5 OP_PICK OP_0 OP_NUMEQUAL OP_IF OP_INPUTINDEX OP_0 OP_NUMEQUALVERIFY OP_0 OP_UTXOTOKENCATEGORY OP_OVER OP_1 OP_CAT OP_EQUALVERIFY OP_0 OP_UTXOTOKENCOMMITMENT OP_DUP OP_SIZE OP_NIP 79 OP_NUMEQUALVERIFY OP_DUP OP_9 OP_SPLIT OP_DROP OP_8 OP_SPLIT OP_NIP 00 OP_EQUALVERIFY OP_DUP 79 OP_SPLIT OP_DROP OP_9 OP_SPLIT OP_NIP OP_3 OP_PICK OP_5 OP_PICK OP_MUL OP_8 OP_DIV OP_9 OP_PICK OP_SIZE OP_NIP OP_OVER OP_NUMEQUALVERIFY OP_9 OP_PICK OP_SHA256 OP_16 OP_SPLIT OP_DROP OP_2 OP_PICK OP_16 OP_SPLIT OP_DROP OP_EQUALVERIFY 80 OP_0 OP_2 OP_PICK OP_1SUB OP_NUM2BIN OP_CAT OP_1 OP_BEGIN OP_OVER OP_2 OP_PICK OP_2 OP_PICK OP_9 OP_PICK OP_MUL OP_RSHIFTBIN OP_OR OP_ROT OP_DROP OP_SWAP OP_DUP OP_2 OP_MUL OP_NIP OP_DUP OP_8 OP_PICK OP_GREATERTHANOREQUAL OP_UNTIL OP_OVER OP_INVERT OP_ROT OP_7 OP_PICK OP_1SUB OP_RSHIFTBIN OP_INVERT OP_12 OP_PICK OP_1 OP_LSHIFTBIN OP_AND OP_12 OP_PICK OP_1 OP_RSHIFTBIN OP_ROT OP_AND OP_2DUP OP_XOR OP_DUP OP_14 OP_PICK OP_XOR OP_2OVER OP_AND OP_15 OP_PICK OP_3 OP_PICK OP_AND OP_OR OP_OVER OP_11 OP_PICK OP_RSHIFTBIN OP_OVER OP_12 OP_PICK OP_RSHIFTBIN OP_3 OP_ROLL OP_12 OP_PICK OP_LSHIFTBIN OP_3 OP_ROLL OP_12 OP_ROLL OP_LSHIFTBIN OP_3 OP_PICK OP_2 OP_PICK OP_XOR OP_DUP OP_6 OP_PICK OP_XOR OP_5 OP_ROLL OP_4 OP_ROLL OP_AND OP_5 OP_ROLL OP_3 OP_ROLL OP_AND OP_OR OP_2ROT OP_AND OP_4 OP_PICK OP_4 OP_PICK OP_XOR OP_OVER OP_3 OP_PICK OP_XOR OP_2DUP OP_XOR OP_7 OP_ROLL OP_7 OP_ROLL OP_AND OP_2ROT OP_AND OP_OR OP_2SWAP OP_AND OP_OR OP_INVERT OP_AND OP_SWAP OP_11 OP_ROLL OP_OR OP_AND OP_DUP OP_SHA256 OP_16 OP_SPLIT OP_DROP OP_SWAP OP_0 OP_4 OP_ROLL OP_NUM2BIN OP_EQUAL OP_0 OP_BEGIN OP_DUP 70 OP_LESSTHAN OP_DUP OP_TOALTSTACK OP_IF OP_4 OP_PICK OP_OVER OP_16 OP_ADD OP_SPLIT OP_DROP OP_OVER OP_SPLIT OP_NIP OP_3 OP_PICK OP_EQUAL OP_IF OP_1 OP_ROT OP_DROP OP_SWAP OP_ENDIF OP_DUP OP_16 OP_ADD OP_NIP OP_ENDIF OP_FROMALTSTACK OP_NOT OP_UNTIL OP_DROP OP_4 OP_PICK OP_8 OP_SPLIT OP_DROP OP_4 OP_SPLIT OP_NIP OP_BIN2NUM OP_1ADD OP_DUP OP_9 OP_ROLL OP_GREATERTHANOREQUAL OP_IF OP_1 OP_ROT OP_DROP OP_SWAP OP_ENDIF 00 OP_ROT OP_IF OP_DROP OP_1 OP_ENDIF OP_5 OP_ROLL OP_4 OP_SPLIT OP_DROP OP_ROT OP_4 OP_NUM2BIN OP_CAT OP_SWAP OP_CAT OP_SWAP OP_CAT OP_ROT 60 OP_SPLIT OP_DROP OP_CAT OP_0 OP_0 OP_BEGIN OP_DUP OP_TXINPUTCOUNT OP_LESSTHAN OP_DUP OP_TOALTSTACK OP_IF OP_2DUP OP_UTXOVALUE OP_ADD OP_ROT OP_DROP OP_SWAP OP_DUP OP_1ADD OP_NIP OP_ENDIF OP_FROMALTSTACK OP_NOT OP_UNTIL OP_DROP OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTBYTECODE OP_0 OP_UTXOBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY OP_4 OP_ROLL OP_1 OP_CAT OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCOMMITMENT OP_ROT OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTVALUE OP_SWAP OP_4 OP_ROLL OP_SUB OP_GREATERTHANOREQUAL OP_NIP OP_NIP OP_NIP OP_ELSE OP_5 OP_PICK OP_1 OP_NUMEQUAL OP_IF OP_INPUTINDEX OP_0 OP_NUMEQUALVERIFY OP_0 OP_UTXOTOKENCATEGORY OP_OVER OP_1 OP_CAT OP_EQUALVERIFY OP_0 OP_UTXOTOKENCOMMITMENT OP_DUP OP_SIZE OP_NIP 79 OP_NUMEQUALVERIFY OP_DUP OP_9 OP_SPLIT OP_DROP OP_8 OP_SPLIT OP_NIP OP_1 OP_EQUALVERIFY OP_2SWAP OP_SWAP OP_MUL OP_8 OP_DIV OP_6 OP_PICK OP_SIZE OP_NIP OP_OVER OP_NUMEQUALVERIFY OP_6 OP_PICK OP_0 OP_ROT OP_NUM2BIN OP_EQUAL OP_NOT OP_VERIFY OP_4 OP_SPLIT OP_DROP OP_BIN2NUM OP_1ADD OP_4 OP_NUM2BIN OP_0 OP_4 OP_NUM2BIN OP_CAT 00 OP_CAT OP_5 OP_ROLL OP_SHA256 OP_16 OP_SPLIT OP_DROP OP_CAT OP_0 60 OP_NUM2BIN OP_CAT OP_0 OP_0 OP_BEGIN OP_DUP OP_TXINPUTCOUNT OP_LESSTHAN OP_DUP OP_TOALTSTACK OP_IF OP_2DUP OP_UTXOVALUE OP_ADD OP_ROT OP_DROP OP_SWAP OP_DUP OP_1ADD OP_NIP OP_ENDIF OP_FROMALTSTACK OP_NOT OP_UNTIL OP_DROP OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTBYTECODE OP_0 OP_UTXOBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY OP_3 OP_ROLL OP_1 OP_CAT OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCOMMITMENT OP_ROT OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTVALUE OP_SWAP OP_3 OP_ROLL OP_SUB OP_GREATERTHANOREQUAL OP_NIP OP_NIP OP_ELSE OP_5 OP_ROLL OP_2 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_0 OP_GREATERTHAN OP_VERIFY OP_0 OP_UTXOTOKENCATEGORY OP_SWAP OP_1 OP_CAT OP_EQUALVERIFY OP_0 OP_UTXOBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_2DROP OP_2DROP OP_1 OP_ENDIF OP_ENDIF",
-  "source": "pragma cashscript ^0.13.0;\n\n/*\n * GameOfLife - Conway's Game of Life as a self-funding CashTokens covenant.\n *\n * The game state lives in the commitment of a single mutable NFT of `stateCategory`,\n * which never leaves this contract. Anyone may advance the game or start a new one;\n * the contract pays the transaction fee out of its own balance (bounded by `maxFee`).\n *\n * Board encoding: `width * height` cells, row-major, packed as a big-endian bit string\n * (cell (x, y) is bit index y * width + x, the MSB of byte 0 is bit index 0).\n * `width * height` must be a multiple of 8.\n *\n * NFT commitment layout (121 bytes):\n *   [0, 4)     gameId      (VM number padded to 4 bytes)\n *   [4, 8)     generation  (VM number padded to 4 bytes)\n *   [8, 9)     status      0x00 = running, 0x01 = ended (a new game may be started)\n *   [9, 121)   history     7 x 16-byte board digests (sha256 truncated), newest first.\n *                          history[0] is the digest of the current board.\n *\n * A game ends when the board dies out, repeats any of the last 7 boards (still lifes and\n * oscillators with period <= 7) or reaches `maxGenerations`. An ended game can always be\n * replaced by a new one, so the contract recovers from every ending on its own.\n *\n * The full board is never stored on-chain in the commitment; it is revealed as the unlocking\n * argument of every transaction, which also makes the whole history replayable from the chain.\n */\ncontract GameOfLife(\n    bytes32 stateCategory,\n    int width,\n    int height,\n    int maxGenerations,\n    int maxFee\n) {\n    // Advance the running game by one generation.\n    function step(bytes board) {\n        require(this.activeInputIndex == 0);\n        require(tx.inputs[0].tokenCategory == stateCategory + 0x01);\n\n        bytes commitment = tx.inputs[0].nftCommitment;\n        require(commitment.length == 121);\n        require(commitment.slice(8, 9) == 0x00, \"game has ended\");\n        bytes history = commitment.slice(9, 121);\n\n        int size = width * height / 8;\n        require(board.length == size);\n        require(sha256(board).slice(0, 16) == history.slice(0, 16), \"board does not match state\");\n\n        // Column masks: a bit at x = 0 in every row, then x = width - 1 in every row.\n        bytes firstCol = 0x80 + toPaddedBytes(0, size - 1);\n        int rows = 1;\n        do {\n            firstCol = firstCol | (firstCol >> (rows * width));\n            rows = rows * 2;\n        } while (rows < height);\n        bytes notFirstCol = ~firstCol;\n        bytes notLastCol = ~(firstCol >> (width - 1));\n\n        // Neighbour in the east (x + 1) and the west (x - 1) of every cell.\n        bytes east = (board << 1) & notLastCol;\n        bytes west = (board >> 1) & notFirstCol;\n\n        // Two-bit sum of (west, self, east) for every cell, used for the rows above and below.\n        bytes ew = east ^ west;\n        bytes row0 = ew ^ board;\n        bytes row1 = (east & west) | (board & ew);\n\n        // Row above (y - 1) and row below (y + 1).\n        bytes up0 = row0 >> width;\n        bytes up1 = row1 >> width;\n        bytes down0 = row0 << width;\n        bytes down1 = row1 << width;\n\n        // Add up + down + (east + west): bit 0 of the sum and the carry into bit 1.\n        bytes ud0 = up0 ^ down0;\n        bytes sum0 = ud0 ^ ew;\n        bytes carry0 = (up0 & down0) | (ew & ud0);\n\n        // Bit 1 inputs: up1, down1, (east & west), carry0. The cell has 2 or 3 neighbours\n        // exactly when one of those four is set.\n        bytes mid1 = east & west;\n        bytes ud1 = up1 ^ down1;\n        bytes mc1 = mid1 ^ carry0;\n        bytes sum1 = ud1 ^ mc1;\n        bytes twoOrMore = (up1 & down1) | (mid1 & carry0) | (ud1 & mc1);\n\n        bytes next = sum1 & ~twoOrMore & (sum0 | board);\n\n        // Detect the end of the game.\n        bytes digest = sha256(next).slice(0, 16);\n        bool ended = next == toPaddedBytes(0, size);\n        for (int h = 0; h < 112; h = h + 16) {\n            if (history.slice(h, h + 16) == digest) {\n                ended = true;\n            }\n        }\n        int generation = int(commitment.slice(4, 8)) + 1;\n        if (generation >= maxGenerations) {\n            ended = true;\n        }\n        bytes status = 0x00;\n        if (ended) {\n            status = 0x01;\n        }\n\n        bytes newCommitment = commitment.slice(0, 4) + toPaddedBytes(generation, 4) + status\n            + digest + history.slice(0, 96);\n        // The NFT stays here with the new state and every input's value is carried over,\n        // minus a bounded fee that pays for this transaction.\n        int total = 0;\n        for (int i = 0; i < tx.inputs.length; i = i + 1) {\n            total = total + tx.inputs[i].value;\n        }\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);\n        require(tx.outputs[0].tokenCategory == stateCategory + 0x01);\n        require(tx.outputs[0].nftCommitment == newCommitment);\n        require(tx.outputs[0].tokenAmount == 0);\n        require(tx.outputs[0].value >= total - maxFee, \"fee too high\");\n    }\n\n    // Start a new game once the previous one has ended.\n    function newGame(bytes board) {\n        require(this.activeInputIndex == 0);\n        require(tx.inputs[0].tokenCategory == stateCategory + 0x01);\n\n        bytes commitment = tx.inputs[0].nftCommitment;\n        require(commitment.length == 121);\n        require(commitment.slice(8, 9) == 0x01, \"game is still running\");\n\n        int size = width * height / 8;\n        require(board.length == size);\n        require(board != toPaddedBytes(0, size), \"board is empty\");\n\n        int gameId = int(commitment.slice(0, 4)) + 1;\n        bytes newCommitment = toPaddedBytes(gameId, 4) + toPaddedBytes(0, 4) + 0x00\n            + sha256(board).slice(0, 16) + toPaddedBytes(0, 96);\n        // The NFT stays here with the new state and every input's value is carried over,\n        // minus a bounded fee that pays for this transaction.\n        int total = 0;\n        for (int i = 0; i < tx.inputs.length; i = i + 1) {\n            total = total + tx.inputs[i].value;\n        }\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);\n        require(tx.outputs[0].tokenCategory == stateCategory + 0x01);\n        require(tx.outputs[0].nftCommitment == newCommitment);\n        require(tx.outputs[0].tokenAmount == 0);\n        require(tx.outputs[0].value >= total - maxFee, \"fee too high\");\n    }\n\n    // Plain BCH sent to this contract is merged into the game when it is advanced.\n    function absorb() {\n        require(this.activeInputIndex > 0);\n        require(tx.inputs[0].tokenCategory == stateCategory + 0x01);\n        require(tx.inputs[0].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n    }\n}\n",
-  "fingerprint": "e14f88223f55069497a0099a8ae71b2b90d75984772a0f9d8678537f6e4de55d",
+  "bytecode": "OP_INPUTINDEX OP_0 OP_NUMEQUALVERIFY OP_1 OP_CAT OP_0 OP_UTXOTOKENCATEGORY OP_OVER OP_EQUALVERIFY OP_0 OP_UTXOTOKENCOMMITMENT OP_DUP OP_9 OP_SPLIT OP_DROP OP_8 OP_SPLIT OP_NIP OP_OVER 79 OP_SPLIT OP_DROP OP_9 OP_SPLIT OP_NIP OP_4 OP_PICK OP_6 OP_PICK OP_MUL OP_8 OP_DIV OP_8 OP_PICK OP_SIZE OP_NIP OP_OVER OP_NUMEQUALVERIFY OP_0 OP_OVER OP_NUM2BIN OP_0 OP_11 OP_PICK OP_0 OP_NUMEQUAL OP_IF OP_4 OP_PICK OP_1 OP_EQUALVERIFY OP_10 OP_PICK OP_2 OP_PICK OP_EQUAL OP_NOT OP_VERIFY OP_5 OP_PICK OP_4 OP_SPLIT OP_DROP OP_BIN2NUM OP_1ADD OP_4 OP_NUM2BIN OP_0 OP_5 OP_NUM2BIN OP_CAT OP_11 OP_PICK OP_SHA256 OP_16 OP_SPLIT OP_DROP OP_CAT OP_0 60 OP_NUM2BIN OP_CAT OP_NIP OP_ELSE OP_11 OP_PICK OP_0 OP_GREATERTHAN OP_VERIFY OP_4 OP_PICK 00 OP_EQUALVERIFY OP_10 OP_PICK OP_SHA256 OP_16 OP_SPLIT OP_DROP OP_4 OP_PICK OP_16 OP_SPLIT OP_DROP OP_EQUALVERIFY 80 OP_0 OP_4 OP_PICK OP_1SUB OP_NUM2BIN OP_CAT OP_1 OP_BEGIN OP_OVER OP_2 OP_PICK OP_2 OP_PICK OP_12 OP_PICK OP_MUL OP_RSHIFTBIN OP_OR OP_ROT OP_DROP OP_SWAP OP_DUP OP_2 OP_MUL OP_NIP OP_DUP OP_11 OP_PICK OP_GREATERTHANOREQUAL OP_UNTIL OP_OVER OP_INVERT OP_2 OP_PICK OP_11 OP_PICK OP_1SUB OP_RSHIFTBIN OP_INVERT OP_14 OP_PICK OP_8 OP_PICK OP_BEGIN OP_OVER OP_1 OP_LSHIFTBIN OP_3 OP_PICK OP_AND OP_2 OP_PICK OP_1 OP_RSHIFTBIN OP_5 OP_PICK OP_AND OP_2DUP OP_XOR OP_2 OP_PICK OP_2 OP_PICK OP_AND OP_OVER OP_6 OP_PICK OP_XOR 12 OP_PICK OP_RSHIFTBIN OP_2 OP_PICK OP_7 OP_PICK OP_XOR 13 OP_PICK OP_LSHIFTBIN OP_2 OP_PICK OP_8 OP_PICK OP_5 OP_PICK OP_AND OP_OR 14 OP_PICK OP_RSHIFTBIN OP_3 OP_PICK OP_9 OP_PICK OP_6 OP_PICK OP_AND OP_OR 15 OP_PICK OP_LSHIFTBIN OP_2OVER OP_XOR OP_4 OP_PICK OP_4 OP_PICK OP_AND OP_7 OP_PICK OP_2 OP_PICK OP_AND OP_OR OP_2OVER OP_XOR OP_7 OP_PICK OP_2 OP_PICK OP_XOR OP_2DUP OP_XOR OP_6 OP_PICK OP_6 OP_PICK OP_AND OP_10 OP_PICK OP_5 OP_PICK OP_AND OP_OR OP_2OVER OP_AND OP_OR OP_INVERT OP_AND OP_4 OP_PICK OP_11 OP_PICK OP_XOR OP_15 OP_PICK OP_OR OP_AND OP_14 OP_ROLL OP_DROP OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_13 OP_PICK OP_SHA256 OP_16 OP_SPLIT OP_DROP OP_13 OP_PICK OP_CAT OP_13 OP_ROLL OP_DROP OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_DUP OP_SIZE OP_NIP 70 13 OP_PICK OP_16 OP_MUL OP_ADD OP_GREATERTHANOREQUAL OP_UNTIL OP_DUP OP_16 OP_SPLIT OP_DROP OP_2 OP_PICK OP_9 OP_PICK OP_EQUAL OP_16 OP_BEGIN OP_DUP 8000 OP_LESSTHAN OP_DUP OP_TOALTSTACK OP_IF OP_3 OP_PICK OP_OVER OP_16 OP_ADD OP_SPLIT OP_DROP OP_OVER OP_SPLIT OP_NIP OP_3 OP_PICK OP_EQUAL OP_IF OP_1 OP_ROT OP_DROP OP_SWAP OP_ENDIF OP_DUP OP_16 OP_ADD OP_NIP OP_ENDIF OP_FROMALTSTACK OP_NOT OP_UNTIL OP_DROP 00 OP_13 OP_ROLL OP_DROP OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_DUP OP_IF OP_1 OP_13 OP_ROLL OP_DROP OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_ENDIF OP_13 OP_PICK OP_4 OP_SPLIT OP_DROP OP_14 OP_PICK OP_8 OP_SPLIT OP_DROP OP_4 OP_SPLIT OP_NIP OP_BIN2NUM 15 OP_PICK OP_ADD OP_4 OP_NUM2BIN OP_CAT OP_13 OP_PICK OP_CAT OP_3 OP_PICK 70 OP_SPLIT OP_DROP OP_CAT OP_9 OP_ROLL OP_DROP OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_ENDIF OP_0 OP_0 OP_BEGIN OP_DUP OP_TXINPUTCOUNT OP_LESSTHAN OP_DUP OP_TOALTSTACK OP_IF OP_2DUP OP_UTXOVALUE OP_ADD OP_ROT OP_DROP OP_SWAP OP_DUP OP_1ADD OP_NIP OP_ENDIF OP_FROMALTSTACK OP_NOT OP_UNTIL OP_DROP OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTBYTECODE OP_0 OP_UTXOBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY OP_8 OP_ROLL OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCOMMITMENT OP_ROT OP_EQUALVERIFY OP_0 OP_OUTPUTVALUE OP_SWAP OP_9 OP_ROLL OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_DROP OP_1",
+  "source": "pragma cashscript ^0.13.0;\r\n\r\n/*\r\n * GameOfLife - Conway's Game of Life as a self-funding CashTokens covenant.\r\n *\r\n * The game state lives in the commitment of a single mutable NFT of `stateCategory`,\r\n * which never leaves this contract. Anyone may advance the game or start a new one;\r\n * the contract pays the transaction fee out of its own balance (bounded by `maxFee`).\r\n *\r\n * Board encoding: `width * height` cells, row-major, packed as a big-endian bit string\r\n * (cell (x, y) is bit index y * width + x, the MSB of byte 0 is bit index 0).\r\n * `width * height` must be a multiple of 8.\r\n *\r\n * NFT commitment layout (121 bytes):\r\n *   [0, 4)     gameId      (VM number padded to 4 bytes)\r\n *   [4, 8)     generation  (VM number padded to 4 bytes)\r\n *   [8, 9)     status      0x00 = running, 0x01 = ended (a new game may be started)\r\n *   [9, 121)   history     digests (sha256 truncated to 16 bytes) of the last 7 boards,\r\n *                          newest first. history[0] is the digest of the current board.\r\n *\r\n * A game runs until the board dies out or repeats one of its previous 7 boards (still lifes\r\n * and oscillators with period <= 7); there is no generation limit. An ended game can always\r\n * be replaced by a new one, so the contract recovers from every ending on its own.\r\n *\r\n * The board is never stored in the commitment; it is revealed as the unlocking argument of\r\n * every move, which also makes the whole history replayable from the chain.\r\n */\r\ncontract GameOfLife(bytes32 stateCategory, int width, int height, int maxFee) {\r\n    // generations == 0: start a new game with `board` (only once the previous game ended).\r\n    // generations >= 1: advance the running game, whose current board is `board`, by that many\r\n    //                   generations in one transaction, which spreads the fixed cost of a move\r\n    //                   (board, contract code, state output) over several generations.\r\n    function play(bytes board, int generations) {\r\n        require(this.activeInputIndex == 0);\r\n        bytes stateToken = stateCategory + 0x01;\r\n        require(tx.inputs[0].tokenCategory == stateToken);\r\n\r\n        bytes commitment = tx.inputs[0].nftCommitment;\r\n        bytes status = commitment.slice(8, 9);\r\n        bytes history = commitment.slice(9, 121);\r\n        int size = width * height / 8;\r\n        require(board.length == size);\r\n        bytes empty = toPaddedBytes(0, size);\r\n        bytes newCommitment = 0x;\r\n\r\n        if (generations == 0) {\r\n            require(status == 0x01, \"game is still running\");\r\n            require(board != empty, \"board is empty\");\r\n            newCommitment = toPaddedBytes(int(commitment.slice(0, 4)) + 1, 4) + toPaddedBytes(0, 5)\r\n                + sha256(board).slice(0, 16) + toPaddedBytes(0, 96);\r\n        } else {\r\n            require(generations > 0);\r\n            require(status == 0x00, \"game has ended\");\r\n            require(sha256(board).slice(0, 16) == history.slice(0, 16), \"board does not match state\");\r\n\r\n            // Column masks: a bit at x = 0 in every row, then x = width - 1 in every row.\r\n            bytes firstCol = 0x80 + toPaddedBytes(0, size - 1);\r\n            int rows = 1;\r\n            do {\r\n                firstCol = firstCol | (firstCol >> (rows * width));\r\n                rows = rows * 2;\r\n            } while (rows < height);\r\n            bytes notFirstCol = ~firstCol;\r\n            bytes notLastCol = ~(firstCol >> (width - 1));\r\n\r\n            // Advance generation by generation. The loop state is declared last so it stays near\r\n            // the top of the stack; `recent` collects the digest of every new board (newest first)\r\n            // and doubles as the loop counter.\r\n            bytes cur = board;\r\n            bytes recent = history;\r\n            do {\r\n                // Neighbour in the east (x + 1) and the west (x - 1) of every cell.\r\n                bytes east = (cur << 1) & notLastCol;\r\n                bytes west = (cur >> 1) & notFirstCol;\r\n\r\n                // Two-bit sum of (west, self, east), used for the rows above (y - 1) and below (y + 1).\r\n                bytes ew = east ^ west;\r\n                bytes mid = east & west;\r\n                bytes up0 = (ew ^ cur) >> width;\r\n                bytes down0 = (ew ^ cur) << width;\r\n                bytes up1 = (mid | (cur & ew)) >> width;\r\n                bytes down1 = (mid | (cur & ew)) << width;\r\n\r\n                // Add up + down + (east + west): bit 0 of the sum and the carry into bit 1.\r\n                bytes ud0 = up0 ^ down0;\r\n                bytes carry0 = (up0 & down0) | (ew & ud0);\r\n\r\n                // Bit 1 inputs are up1, down1, mid and carry0. A cell has 2 or 3 neighbours exactly\r\n                // when one of those four is set; it lives with 3, or with 2 if it was alive.\r\n                bytes ud1 = up1 ^ down1;\r\n                bytes mc1 = mid ^ carry0;\r\n                cur = (ud1 ^ mc1) & ~((up1 & down1) | (mid & carry0) | (ud1 & mc1)) & ((ud0 ^ ew) | cur);\r\n                recent = sha256(cur).slice(0, 16) + recent;\r\n            } while (recent.length < 112 + generations * 16);\r\n\r\n            // The game ends when the board has died out or repeats one of the 7 boards before it.\r\n            // Both are permanent, so checking the final board is enough.\r\n            bytes digest = recent.slice(0, 16);\r\n            bool ended = cur == empty;\r\n            for (int h = 16; h < 128; h = h + 16) {\r\n                if (recent.slice(h, h + 16) == digest) {\r\n                    ended = true;\r\n                }\r\n            }\r\n            status = 0x00;\r\n            if (ended) {\r\n                status = 0x01;\r\n            }\r\n            newCommitment = commitment.slice(0, 4) + toPaddedBytes(int(commitment.slice(4, 8)) + generations, 4)\r\n                + status + recent.slice(0, 112);\r\n        }\r\n\r\n        // The NFT stays here with the new state and every input's value is carried over,\r\n        // minus a bounded fee that pays for this transaction.\r\n        int total = 0;\r\n        for (int i = 0; i < tx.inputs.length; i = i + 1) {\r\n            total = total + tx.inputs[i].value;\r\n        }\r\n        require(tx.outputs.length == 1);\r\n        require(tx.outputs[0].lockingBytecode == tx.inputs[0].lockingBytecode);\r\n        require(tx.outputs[0].tokenCategory == stateToken);\r\n        require(tx.outputs[0].nftCommitment == newCommitment);\r\n        require(tx.outputs[0].value >= total - maxFee, \"fee too high\");\r\n    }\r\n}\r\n",
+  "fingerprint": "5c7e70459dce34350510a1ebc1f2f8e807b4e69d262f056aebee95810b446432",
   "debug": {
-    "bytecode": "5579009c63c0009d00ce78517e8800cf76827701799d76597f75587f770100887601797f75597f775379557995589659798277789d5979a8607f755279607f758801800052798c807e5165785279527959799599857b757c76529577765879a26678837b57798c99835c795198845c7951997b846e86765e798670845f7953798485785b7999785c7999537a5c7998537a5c7a98537952798676567986557a547a84557a537a848571845479547986785379866e86577a577a8471848572848583847c5b7a858476a8607f757c00547a808700657601709f766b6354797860937f75787f7753798763517b757c6876609377686c9166755479587f75547f77818b76597aa263517b757c6801007b63755168557a547f757b54807e7c7e7c7e7b01607f757e00006576c39f766b636ec6937b757c768b77686c916675c4519d00cd00c78800d1547a517e8800d27b8800d3009d00cc7c547a94a2777777675579519c63c0009d00ce78517e8800cf76827701799d76597f75587f775188727c95589656798277789d5679007b80879169547f75818b54800054807e01007e557aa8607f757e000160807e00006576c39f766b636ec6937b757c768b77686c916675c4519d00cd00c78800d1537a517e8800d27b8800d3009d00cc7c537a94a2777767557a529dc000a06900ce7c517e8800c7c0c7886d6d516868",
-    "sourceMap": "36:4:120:5;;;;;37:16:37:37;:41::42;:8::44:1;38:26:38:27:0;:16::42:1;:46::59:0;:62::66;:46:::1;:8::68;40:37:40:38:0;:27::53:1;41:16:41:26:0;:::33:1;;:37::40:0;:8::42:1;42:16:42:26:0;:36::37;:16::38:1;;:33::34:0;:16::38:1;;:42::46:0;:8::66:1;43:24:43:34:0;:44::47;:24::48:1;;:41::42:0;:24::48:1;;45:19:45:24:0;;:27::33;;:19:::1;:36::37:0;:19:::1;46:16:46:21:0;;:::28:1;;:32::36:0;:8::38:1;47:23:47:28:0;;:16::29:1;:39::41:0;:16::42:1;;:46::53:0;;:63::65;:46::66:1;;:8::98;50:25:50:29:0;:46::47;:49::53;;:::57:1;:32::58;:25;51:19:51:20:0;52:8:55:32;53:23:53:31;:35::43;;:48::52;;:55::60;;:48:::1;:35::61;:23::62;:12::63;;;54:19:54:23:0;:26::27;:19:::1;:12::28;55:17:55:21:0;:24::30;;52:8::32:1;;56:29:56:37:0;:28:::1;57:29:57::0;:42::47;;:::51:1;:29::52;:27::53;60:22:60:27:0;;:31::32;:22:::1;:21::46;61:22:61:27:0;;:31::32;:22:::1;:36::47:0;:21:::1;64:19:64:30:0;::::1;65:21:65:23:0;:26::31;;:21:::1;66:22:66:33:0;::::1;:38::43:0;;:46::48;;:38:::1;:21::49;69:20:69:24:0;:28::33;;:20:::1;70::70:24:0;:28::33;;:20:::1;71:22:71:26:0;;:30::35;;:22:::1;72::72:26:0;;:30::35;;:22:::1;75:20:75:23:0;;:26::31;;:20:::1;76:21:76:24:0;:27::29;;:21:::1;77:24:77:27:0;;:30::35;;:24:::1;:40::42:0;;:45::48;;:40:::1;:23::49;81:21:81:32:0;::::1;82:20:82:23:0;;:26::31;;:20:::1;83::83:24:0;:27::33;;:20:::1;84:21:84:30:0;::::1;85:27:85::0;;:33::38;;:27:::1;:43::56:0;::::1;:26::57;:61::70:0;::::1;:26::71;87:28:87:38;:21;:42::46:0;:49::54;;:42:::1;:21::55;90:30:90:34:0;:23::35:1;:45::47:0;:23::48:1;;91:21:91:25:0;:43::44;:46::50;;:29::51:1;:21;92::92:22:0;:8:96:9;:24:92:25;:28::31;:24:::1;;;:45:96:9:0;93:16:93:23;;:33::34;:37::39;:33:::1;:16::40;;:30::31:0;:16::40:1;;:44::50:0;;:16:::1;:52:95:13:0;94:24:94:28;:16::29:1;;;93:52:95:13;92:37:92:38:0;:41::43;:37:::1;:33;:45:96:9;;:8;;;97:29:97:39:0;;:49::50;:29::51:1;;:46::47:0;:29::51:1;;:25::52;:::56;98:12:98:22:0;:26::40;;:12:::1;:42:100:9:0;99:20:99:24;:12::25:1;;;98:42:100:9;101:23:101:27:0;102:12:102:17;:19:104:9;103:12:103:26:1;;102:19:104:9;106:30:106:40:0;;:50::51;:30::52:1;;:69::79:0;:81::82;:55::83:1;:30;:86::92:0;:30:::1;107:14:107:20:0;106:30:::1;107:23::30:0;:40::42;:23::43:1;;106:30;110:20:110:21:0;111:21:111:22;:8:113:9;:24:111:25;:28::44;:24:::1;;;:57:113:9:0;112:20:112:39;:28::46:1;:20;:12::47;;;111:50:111:51:0;:::55:1;:46;:57:113:9;;:8;;;114:16:114:33:0;:37::38;:8::40:1;115:27:115:28:0;:16::45:1;:59::60:0;:49::77:1;:8::79;116:27:116:28:0;:16::43:1;:47::60:0;;:63::67;:47:::1;:8::69;117:27:117:28:0;:16::43:1;:47::60:0;:8::62:1;118:27:118:28:0;:16::41:1;:45::46:0;:8::48:1;119:27:119:28:0;:16::35:1;:39::44:0;:47::53;;:39:::1;:8::71;36:31:120:5;;;:4;123::150::0;;;;;124:16:124:37;:41::42;:8::44:1;125:26:125:27:0;:16::42:1;:46::59:0;:62::66;:46:::1;:8::68;127:37:127:38:0;:27::53:1;128:16:128:26:0;:::33:1;;:37::40:0;:8::42:1;129:16:129:26:0;:36::37;:16::38:1;;:33::34:0;:16::38:1;;:42::46:0;:8::73:1;131:19:131:33:0;;::::1;:36::37:0;:19:::1;132:16:132:21:0;;:::28:1;;:32::36:0;:8::38:1;133:16:133:21:0;;:39::40;:42::46;:25::47:1;:16;;:8::67;135:45:135:46:0;:25::47:1;;:21::48;:::52;136:52:136:53:0;:30::54:1;:71::72:0;:74::75;:57::76:1;:30;:79::83:0;:30:::1;137:21:137:26:0;;:14::27:1;:37::39:0;:14::40:1;;136:30;137:57::58:0;:60::62;:43::63:1;136:30;140:20:140:21:0;141:21:141:22;:8:143:9;:24:141:25;:28::44;:24:::1;;;:57:143:9:0;142:20:142:39;:28::46:1;:20;:12::47;;;141:50:141:51:0;:::55:1;:46;:57:143:9;;:8;;;144:16:144:33:0;:37::38;:8::40:1;145:27:145:28:0;:16::45:1;:59::60:0;:49::77:1;:8::79;146:27:146:28:0;:16::43:1;:47::60:0;;:63::67;:47:::1;:8::69;147:27:147:28:0;:16::43:1;:47::60:0;:8::62:1;148:27:148:28:0;:16::41:1;:45::46:0;:8::48:1;149:27:149:28:0;:16::35:1;:39::44:0;:47::53;;:39:::1;:8::71;123:34:150:5;;:4;153::157::0;;;;154:16:154:37;:40::41;:16:::1;:8::43;155:26:155:27:0;:16::42:1;:46::59:0;:62::66;:46:::1;:8::68;156:26:156:27:0;:16::44:1;:58::79:0;:48::96:1;:8::98;153:22:157:5;;;28:0:158:1;",
+    "bytecode": "c0009d517e00ce788800cf76597f75587f777801797f75597f775479567995589658798277789d007880005b79009c63547951885a7952798791695579547f75818b54800055807e5b79a8607f757e000160807e77675b7900a06954790100885a79a8607f755479607f758801800054798c807e516578527952795c799599857b757c76529577765b79a266788352795b798c99835e79587965785198537984527951995579846e865279527984785679860112799952795779860113799852795879557984850114799953795979567984850115799870865479547984577952798485708657795279866e8656795679845a7955798485708485838454795b79865f7985845e7a757c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6c6c6c6c6c6c6c6c6c6c6c6c5d79a8607f755d797e5d7a757c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6c6c6c6c6c6c6c6c6c6c6c6d6d6d6d6d6d7682770170011379609593a26676607f7552795979876065760280009f766b6353797860937f75787f7753798763517b757c6876609377686c91667501005d7a757c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6c6c6c6c6c6c6c6c6c6c6c7663515d7a757c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6c6c6c6c6c6c6c6c6c6c6c685d79547f755e79587f75547f77810115799354807e5d797e537901707f757e597a757c6b7c6b7c6b7c6b7c6b7c6b7c6b7c6c6c6c6c6c6c6c6d6d6d6d6800006576c39f766b636ec6937b757c768b77686c916675c4519d00cd00c78800d1587a8800d27b8800cc7c597a94a2696d6d6d6d7551",
+    "sourceMap": "34:16:34:37;:41::42;:8::44:1;35:43:35:47:0;:27:::1;36:26:36:27:0;:16::42:1;:46::56:0;:8::58:1;38:37:38:38:0;:27::53:1;39:23:39:33:0;:43::44;:23::45:1;;:40::41:0;:23::45:1;;40:24:40:34:0;:44::47;:24::48:1;;:41::42:0;:24::48:1;;41:19:41:24:0;;:27::33;;:19:::1;:36::37:0;:19:::1;42:16:42:21:0;;:::28:1;;:32::36:0;:8::38:1;43:36:43:37:0;:39::43;:22::44:1;44:30:44:32:0;46:12:46:23;;:27::28;:12:::1;:30:51:9:0;47:20:47:26;;:30::34;:12::61:1;48:20:48:25:0;;:29::34;;:20:::1;;:12::54;49:46:49:56:0;;:66::67;:46::68:1;;:42::69;:::73;:75::76:0;:28::77:1;:94::95:0;:97::98;:80::99:1;:28;50:25:50:30:0;;:18::31:1;:41::43:0;:18::44:1;;49:28;50:61::62:0;:64::66;:47::67:1;49:28;:12::68;51:15:111:9:0;52:20:52:31;;:34::35;:20:::1;:12::37;53:20:53:26:0;;:30::34;:12::54:1;54:27:54:32:0;;:20::33:1;:43::45:0;:20::46:1;;:50::57:0;;:67::69;:50::70:1;;:12::102;57:29:57:33:0;:50::51;:53::57;;:::61:1;:36::62;:29;58:23:58:24:0;59:12:62:36;60:27:60:35;:39::47;;:52::56;;:59::64;;:52:::1;:39::65;:27::66;:16::67;;;61:23:61:27:0;:30::31;:23:::1;:16::32;62:21:62:25:0;:28::34;;59:12::36:1;;63:33:63:41:0;:32:::1;64:33:64::0;;:46::51;;:::55:1;:33::56;:31::57;69:24:69:29:0;;70:27:70:34;;71:12:94:61;73:30:73:33;:37::38;:30:::1;:42::52:0;;:29:::1;74:30:74:33:0;;:37::38;:30:::1;:42::53:0;;:29:::1;77:27:77:38:0;::::1;78:28:78:32:0;;:35::39;;:28:::1;79:29:79:31:0;:34::37;;:29:::1;:42::47:0;;:28:::1;80:31:80:33:0;;:36::39;;:31:::1;:44::49:0;;:30:::1;81:29:81:32:0;;:36::39;;:42::44;;:36:::1;:29::45;:50::55:0;;:28:::1;82:31:82:34:0;;:38::41;;:44::46;;:38:::1;:31::47;:52::57:0;;:30:::1;85:28:85:39:0;::::1;86:32:86:35:0;;:38::43;;:32:::1;:48::50:0;;:53::56;;:48:::1;:31::57;90:28:90:39:0;::::1;91::91:31:0;;:34::40;;:28:::1;92:23:92:32:0;::::1;:39::42:0;;:45::50;;:39:::1;:55::58:0;;:61::67;;:55:::1;:38::68;:72::81:0;::::1;:38::82;:36::83;:22;:88::91:0;;:94::96;;:88:::1;:100::103:0;;:87:::1;:22::104;:16::105;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;93:32:93:35:0;;:25::36:1;:46::48:0;:25::49:1;;:52::58:0;;:25:::1;:16::59;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;71:15:94:13;;;;;;94:21::27:0;:::34:1;;:37::40:0;:43::54;;:57::59;:43:::1;:37;71:12::61;;98:27:98:33:0;:43::45;:27::46:1;;99:25:99:28:0;;:32::37;;:25:::1;100::100:27:0;:12:104:13;:29:100:30;:33::36;:29:::1;;;:50:104:13:0;101:20:101:26;;:36::37;:40::42;:36:::1;:20::43;;:33::34:0;:20::43:1;;:47::53:0;;:20:::1;:55:103:17:0;102:28:102:32;:20::33:1;;;101:55:103:17;100:42:100:43:0;:46::48;:42:::1;:38;:50:104:13;;:12;;;105:21:105:25:0;:12::26:1;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;106:16:106:21:0;:23:108:13;107:25:107:29;:16::30:1;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;106:23:108:13;109:28:109:38:0;;:48::49;:28::50:1;;:71::81:0;;:91::92;:71::93:1;;:88::89:0;:71::93:1;;:67::94;:97::108:0;;:67:::1;:110::111:0;:53::112:1;:28;110:18:110:24:0;;109:28:::1;110:27::33:0;;:43::46;:27::47:1;;109:28;:12::48;;;;;;;;;;;;;;;;;;;;;;;;;51:15:111:9;;;;;115:20:115:21:0;116:21:116:22;:8:118:9;:24:116:25;:28::44;:24:::1;;;:57:118:9:0;117:20:117:39;:28::46:1;:20;:12::47;;;116:50:116:51:0;:::55:1;:46;:57:118:9;;:8;;;119:16:119:33:0;:37::38;:8::40:1;120:27:120:28:0;:16::45:1;:59::60:0;:49::77:1;:8::79;121:27:121:28:0;:16::43:1;:47::57:0;;:8::59:1;122:27:122:28:0;:16::43:1;:47::60:0;:8::62:1;123:27:123:28:0;:16::35:1;:39::44:0;:47::53;;:39:::1;:16;:8::71;33:48:124:5;;;;;",
     "logs": [],
     "requires": [
       {
+        "ip": 6,
+        "line": 34
+      },
+      {
         "ip": 12,
-        "line": 37
+        "line": 36
       },
       {
-        "ip": 18,
-        "line": 38
-      },
-      {
-        "ip": 25,
-        "line": 41
-      },
-      {
-        "ip": 34,
-        "line": 42,
-        "message": "game has ended"
+        "ip": 41,
+        "line": 42
       },
       {
         "ip": 54,
-        "line": 46
-      },
-      {
-        "ip": 66,
         "line": 47,
-        "message": "board does not match state"
-      },
-      {
-        "ip": 316,
-        "line": 114
-      },
-      {
-        "ip": 321,
-        "line": 115
-      },
-      {
-        "ip": 328,
-        "line": 116
-      },
-      {
-        "ip": 332,
-        "line": 117
-      },
-      {
-        "ip": 336,
-        "line": 118
-      },
-      {
-        "ip": 344,
-        "line": 119,
-        "message": "fee too high"
-      },
-      {
-        "ip": 355,
-        "line": 124
-      },
-      {
-        "ip": 361,
-        "line": 125
-      },
-      {
-        "ip": 368,
-        "line": 128
-      },
-      {
-        "ip": 377,
-        "line": 129,
         "message": "game is still running"
       },
       {
-        "ip": 388,
-        "line": 132
-      },
-      {
-        "ip": 396,
-        "line": 133,
+        "ip": 61,
+        "line": 48,
         "message": "board is empty"
       },
       {
-        "ip": 446,
-        "line": 144
+        "ip": 92,
+        "line": 52
       },
       {
-        "ip": 451,
-        "line": 145
+        "ip": 96,
+        "line": 53,
+        "message": "game has ended"
       },
       {
-        "ip": 458,
-        "line": 146
+        "ip": 108,
+        "line": 54,
+        "message": "board does not match state"
       },
       {
-        "ip": 462,
-        "line": 147
+        "ip": 569,
+        "line": 119
       },
       {
-        "ip": 466,
-        "line": 148
+        "ip": 574,
+        "line": 120
       },
       {
-        "ip": 474,
-        "line": 149,
+        "ip": 579,
+        "line": 121
+      },
+      {
+        "ip": 583,
+        "line": 122
+      },
+      {
+        "ip": 591,
+        "line": 123,
         "message": "fee too high"
-      },
-      {
-        "ip": 484,
-        "line": 154
-      },
-      {
-        "ip": 490,
-        "line": 155
-      },
-      {
-        "ip": 495,
-        "line": 156
       }
     ],
-    "sourceTags": "233:236:fu;237:240:lc;241:241:sc;301:303:fu;304:307:lc;308:308:sc;339:341:sc;431:433:fu;434:437:lc;438:438:sc;469:470:sc"
+    "sourceTags": "340:345:sc;393:396:fu;397:400:lc;401:401:sc;535:538:sc;555:557:fu;558:561:lc;562:562:sc"
   },
   "compiler": {
     "name": "cashc",

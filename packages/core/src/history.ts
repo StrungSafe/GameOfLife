@@ -44,6 +44,8 @@ export interface MoveRecord {
   gameId: number;
   /** Generation of the board after this move. */
   generation: number;
+  /** Generations this move advanced (0 for a new game). */
+  generations: number;
   ended: boolean;
 }
 
@@ -135,6 +137,7 @@ export const loadHistory = async (
       kind: move.kind,
       gameId: state.gameId,
       generation: state.generation,
+      generations: move.generations,
       ended: state.ended,
     };
     if (move.kind === 'newGame') {
@@ -164,7 +167,7 @@ export const loadHistory = async (
     const lastMove = record.moves[record.moves.length - 1];
     const headOutput = [...spenders.values(), genesis].find((entry) => entry.txid === lastMove.txid)?.tx.outputs[0];
     if (headOutput?.token?.nft) {
-      record.endReason = endReasonOf(decodeState(headOutput.token.nft.commitment), last, deployment.maxGenerations);
+      record.endReason = endReasonOf(decodeState(headOutput.token.nft.commitment), last);
     }
   }
 

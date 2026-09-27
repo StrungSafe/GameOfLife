@@ -4,6 +4,7 @@ import {
   decodeTransactionUnsafe,
   hexToBin,
   sha256,
+  vmNumberToBigInt,
   type TransactionCommon,
 } from '@bitauth/libauth';
 
@@ -14,29 +15,33 @@ export interface ParsedMove {
   kind: MoveKind;
   /** The board revealed in the unlocking bytecode (current board for `step`, initial for `newGame`). */
   boardBytes?: Uint8Array;
+  /** Generations advanced by a `step`. */
+  generations: number;
 }
 
-// Function indices follow the declaration order in GameOfLife.cash.
-const FUNCTIONS: Record<number, MoveKind | 'absorb'> = { 0: 'step', 1: 'newGame' };
+type Instruction = { opcode: number; data?: Uint8Array };
 
-const selectorOf = (instruction: { opcode: number; data?: Uint8Array }): number | undefined => {
+const numberOf = (instruction: Instruction | undefined): number | undefined => {
+  if (!instruction) return undefined;
   if (instruction.opcode === 0) return 0;
   if (instruction.opcode >= 0x51 && instruction.opcode <= 0x60) return instruction.opcode - 0x50;
-  return undefined;
+  if (!instruction.data) return undefined;
+  const value = vmNumberToBigInt(instruction.data, { requireMinimalEncoding: false });
+  return typeof value === 'string' ? undefined : Number(value);
 };
 
 /**
- * Parse the unlocking bytecode of a GameOfLife input. `redeemScript` is the game contract's
- * redeem script; inputs of any other script are reported as `genesis`.
+ * Parse the unlocking bytecode of a GameOfLife input: `<generations> <board> <redeem script>`.
+ * Inputs of any other script are reported as `genesis`.
  */
 export const parseGameUnlocking = (unlocking: Uint8Array, redeemScript: Uint8Array): ParsedMove => {
-  const instructions = decodeAuthenticationInstructions(unlocking) as Array<{ opcode: number; data?: Uint8Array }>;
+  const instructions = decodeAuthenticationInstructions(unlocking) as Instruction[];
   const last = instructions[instructions.length - 1];
-  if (!last?.data || binToHex(last.data) !== binToHex(redeemScript)) return { kind: 'genesis' };
-  const selector = selectorOf(instructions[instructions.length - 2] ?? { opcode: -1 });
-  const kind = selector === undefined ? undefined : FUNCTIONS[selector];
-  if (kind !== 'step' && kind !== 'newGame') throw new Error('Unexpected game function in state input');
-  return { kind, boardBytes: instructions[instructions.length - 3]?.data };
+  if (!last?.data || binToHex(last.data) !== binToHex(redeemScript)) return { kind: 'genesis', generations: 0 };
+  const boardBytes = instructions[instructions.length - 2]?.data;
+  const generations = numberOf(instructions[instructions.length - 3]);
+  if (!boardBytes || generations === undefined || generations < 0) throw new Error('Malformed game move');
+  return { kind: generations === 0 ? 'newGame' : 'step', boardBytes, generations };
 };
 
 export const decodeTx = (hex: string): TransactionCommon => decodeTransactionUnsafe(hexToBin(hex));

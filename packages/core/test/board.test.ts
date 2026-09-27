@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Board, PATTERNS, centerPattern, decodeState, encodeState, genesisState, newGameState, stepState } from '../src/index.js';
+import { Board, PATTERNS, centerPattern, decodeState, encodeState, genesisState, newGameState, planMove } from '../src/index.js';
 
 const seeded = (seed: number) => () => {
   // mulberry32
@@ -63,7 +63,7 @@ describe('state commitment', () => {
   it('round-trips', () => {
     const board = Board.random(64, 48, 0.3, seeded(2));
     let state = newGameState({ ...genesisState(), gameId: 41 }, board);
-    state = stepState(state, board, 1000).state;
+    state = planMove(state, board).state;
     const decoded = decodeState(encodeState(state));
     expect(decoded.gameId).toBe(42);
     expect(decoded.generation).toBe(1);
@@ -74,10 +74,10 @@ describe('state commitment', () => {
   });
 
   it('encodes large numbers', () => {
-    const state = { ...genesisState(), gameId: 70000, generation: 300 };
+    const state = { ...genesisState(), gameId: 70000, generation: 2_000_000_000 };
     const decoded = decodeState(encodeState(state));
     expect(decoded.gameId).toBe(70000);
-    expect(decoded.generation).toBe(300);
+    expect(decoded.generation).toBe(2_000_000_000);
   });
 
   it('detects the ways a game ends', () => {
@@ -85,11 +85,12 @@ describe('state commitment', () => {
       const board = Board.fromText(16, 16, text, 4, 4);
       return { board, state: newGameState(genesisState(), board) };
     };
-    const run = (text: string, max = 1000) => {
+    const run = (text: string, perMove = 1) => {
       let { board, state } = start(text);
       for (let i = 0; i < 50; i += 1) {
-        const result = stepState(state, board, max);
-        ({ board, state } = result);
+        const result = planMove(state, board, perMove);
+        ({ state } = result);
+        board = result.frames[result.frames.length - 1];
         if (result.endReason) return { reason: result.endReason, generation: state.generation };
       }
       return undefined;
@@ -97,6 +98,8 @@ describe('state commitment', () => {
     expect(run('O')).toEqual({ reason: 'extinct', generation: 1 });
     expect(run('OO\nOO')).toEqual({ reason: 'still', generation: 1 });
     expect(run('OOO')).toEqual({ reason: 'oscillating', generation: 2 });
-    expect(run('.O.\n..O\nOOO', 5)).toEqual({ reason: 'limit', generation: 5 });
+    // Bigger moves stop exactly where the game ends.
+    expect(run('OOO', 5)).toEqual({ reason: 'oscillating', generation: 2 });
+    expect(run('.O.\n..O\nOOO', 5)).toMatchObject({ reason: 'still' }); // the glider crashes into a corner block
   });
 });

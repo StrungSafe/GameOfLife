@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   GameClient,
-  KNOWN_DEPLOYMENTS,
   NotEnoughFundsError,
   DEFAULT_PARAMS,
   connect,
   createSandbox,
+  discoverGames,
   loadHistory,
+  pickDefaultGame,
+  type DiscoveredGame,
   type Sandbox,
   type Board,
   type GameHistory,
@@ -47,13 +49,42 @@ export const useGame = (settings: Settings) => {
     return () => { cancelled = true; };
   }, [network]);
 
-  const deployment = SANDBOX ? sandbox?.deployment : settings.deployments[network] ?? KNOWN_DEPLOYMENTS[network];
-
   const connection = useMemo(
     () => (SANDBOX ? sandbox?.connection ?? null : connect(network, server, { persistent: true })),
     [network, server, sandbox],
   );
   useEffect(() => () => { void connection?.close(); }, [connection]);
+
+  // Every game on the network, found on chain through the registry (most active first).
+  const [games, setGames] = useState<DiscoveredGame[] | null>(null);
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverError, setDiscoverError] = useState<string | null>(null);
+  const discover = useCallback(async () => {
+    if (!connection) return null;
+    setDiscovering(true);
+    try {
+      const found = await discoverGames(connection);
+      setGames(found);
+      setDiscoverError(null);
+      return found;
+    } catch (e) {
+      setDiscoverError(friendlyError(e));
+      return null;
+    } finally {
+      setDiscovering(false);
+    }
+  }, [connection]);
+  useEffect(() => {
+    setGames(null);
+    void discover();
+  }, [discover]);
+
+  // The chosen game, or else the most active one on chain.
+  const selected = SANDBOX ? sandbox?.deployment : settings.deployments[network];
+  const chosen = selected ?? (games ? pickDefaultGame(games)?.deployment : undefined);
+  const autoSelected = !selected;
+  // Keep the same object while the choice stays the same, so refreshing the list doesn't reset the game.
+  const deployment = useMemo(() => chosen, [chosen?.network, chosen?.category]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const client = useMemo(
     () => (deployment && connection ? new GameClient(deployment, connection.provider) : null),
@@ -120,7 +151,10 @@ export const useGame = (settings: Settings) => {
     }
   }, [client, refresh]);
 
-  const step = useCallback(() => runMove('step', (current) => client!.step(current)), [runMove, client]);
+  const step = useCallback(
+    (generations = 1) => runMove('step', (current) => client!.step(current, generations)),
+    [runMove, client],
+  );
   const newGame = useCallback((board: Board) => runMove('newGame', (current) => client!.newGame(board, current)), [runMove, client]);
 
   const [history, setHistory] = useState<GameHistory | null>(null);
@@ -149,6 +183,11 @@ export const useGame = (settings: Settings) => {
 
   return {
     sandbox,
+    games,
+    discovering,
+    discoverError,
+    discover,
+    autoSelected,
     deployment,
     connection,
     client,

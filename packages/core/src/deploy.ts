@@ -9,11 +9,13 @@ import {
 import { createContracts, DEFAULT_PARAMS, validateParams, type Deployment, type GameParams } from './deployment.js';
 import { NETWORKS, type NetworkName } from './network.js';
 import { encodeState, genesisState } from './state.js';
+import { paramsOpReturnChunks, REGISTRY_LOCKING_BYTECODE, REGISTRY_MARKER_VALUE } from './registry.js';
 
 /**
  * Deploying a game needs one funded coin to create the state token from. Instead of a wallet the
  * interfaces use a throwaway "deployer" key: fund its address with any wallet, then `deployGame`
- * mints the state NFT into the game contract and hands all the coins to the contract.
+ * mints the state NFT into the game contract, announces it in the on-chain registry and hands
+ * all the coins to the contract.
  */
 export interface DeployerKey {
   privateKey: Uint8Array;
@@ -83,8 +85,11 @@ export const deployGame = async (options: {
         amount: 0n,
         nft: { capability: 'mutable', commitment: binToHex(encodeState(genesisState())) },
       },
-    });
-  const total = sum(ordered);
+    })
+    // Announce the game in the on-chain registry so clients can discover it.
+    .addOutput({ to: REGISTRY_LOCKING_BYTECODE, amount: REGISTRY_MARKER_VALUE })
+    .addOpReturnOutput(paramsOpReturnChunks(params));
+  const total = sum(ordered) - REGISTRY_MARKER_VALUE;
   const fee = build(total - 1000n).getTransactionSize() + 2n;
   if (total - fee < 2000n) throw new Error(`Not enough coins to deploy (have ${total} sats, need at least ${MIN_DEPLOY_FUNDING}).`);
   const details = await build(total - fee).send();

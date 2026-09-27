@@ -70,7 +70,6 @@ const END_REASONS: Record<string, string> = {
   extinct: 'every cell died',
   still: 'the board froze into a still life',
   oscillating: 'the board is repeating itself',
-  limit: 'the generation limit was reached',
 };
 
 export const describeState = (snapshot: Snapshot): string => {
